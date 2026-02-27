@@ -1,0 +1,663 @@
+/* ==========================================================================
+   TOCSEA Soil Calculator - Coastal soil loss prediction
+   ========================================================================== */
+
+/* Lighter calculator icon in page header */
+.dashboard-hub .header-title .lucide-icon {
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.soil-calculator-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-xl);
+}
+
+@media (min-width: 768px) {
+    .soil-calculator-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.soil-calculator-form-card .form-group {
+    margin-bottom: var(--space-lg);
+}
+
+.soil-calculator-form-card .form-group:last-of-type {
+    margin-bottom: var(--space-xl);
+}
+
+.soil-calculator-form-card label {
+    display: block;
+    margin-bottom: var(--space-xs);
+    font-weight: 500;
+    color: var(--color-gray-900);
+    font-size: 0.9375rem;
+}
+
+.form-label-unit {
+    font-weight: 400;
+    color: var(--color-text-muted);
+}
+
+.soil-calculator-form-card input,
+.soil-calculator-form-card select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--color-gray-200);
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+    background: var(--color-white);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.soil-calculator-form-card input:focus,
+.soil-calculator-form-card select:focus {
+    outline: none;
+    border-color: var(--color-teal);
+    box-shadow: 0 0 0 3px var(--color-teal-muted);
+}
+
+.soil-calculator-form-card input.is-invalid,
+.soil-calculator-form-card select.is-invalid {
+    border-color: #dc3545;
+}
+
+.soil-calculator-form .form-hint {
+    display: block;
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+    margin-top: var(--space-xs);
+}
+
+.soil-calculator-form .form-error {
+    display: block;
+    font-size: 0.8125rem;
+    color: #dc3545;
+    margin-top: var(--space-xs);
+}
+
+.soil-calculator-submit {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, var(--color-teal), var(--color-ocean-blue));
+    color: var(--color-white);
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+@media (hover: hover) {
+    .soil-calculator-submit:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(14, 107, 107, 0.35);
+    }
+}
+
+.soil-calculator-submit .lucide-icon {
+    color: currentColor;
+}
+
+/* --------------------------------------------------------------------------
+   Result wrapper & states
+   -------------------------------------------------------------------------- */
+.soil-calculator-result-wrapper {
+    position: relative;
+    min-height: 280px;
+    overflow: hidden;
+}
+
+.soil-calculator-result-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--space-2xl);
+    color: var(--color-text-muted);
+    min-height: 280px;
+    transition: opacity 0.3s ease;
+}
+
+.soil-calculator-result-empty[hidden] {
+    display: none !important;
+}
+
+.soil-calculator-result-empty .lucide-icon {
+    color: var(--color-gray-200);
+    margin-bottom: var(--space-md);
+}
+
+.soil-calculator-result-empty p {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* Result card - analytics dashboard container */
+.soil-calculator-result-card {
+    background: var(--color-white);
+    border-radius: 20px;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 4px 24px rgba(10, 37, 64, 0.08), 0 2px 8px rgba(10, 37, 64, 0.04);
+    border: 1px solid var(--color-gray-200);
+    animation: soilResultFadeIn 0.4s ease forwards;
+}
+
+.soil-calculator-result-card[hidden] {
+    display: none !important;
+}
+
+@keyframes soilResultFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Result card – row-based layout
+   -------------------------------------------------------------------------- */
+
+/* 1. Top Result Row: label | model badge | value + unit | risk badge */
+.soil-result-top-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem 1.5rem;
+    padding: 0 0 1.25rem;
+    border-bottom: 1px solid var(--color-gray-200);
+}
+
+.soil-result-label {
+    flex-basis: 100%;
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+@media (min-width: 480px) {
+    .soil-result-label {
+        flex-basis: auto;
+        order: -1;
+    }
+}
+
+.soil-result-model-badge {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    background: var(--color-teal-muted);
+    color: var(--color-ocean-blue);
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 999px;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.soil-result-value-block {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.soil-calculator-result-value {
+    font-size: clamp(1.75rem, 5vw, 2.5rem);
+    font-weight: 700;
+    color: var(--color-ocean-blue);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+}
+
+.soil-calculator-result-unit {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+}
+
+/* Risk badge in top row */
+.soil-result-top-row .soil-calculator-risk-badge {
+    flex-shrink: 0;
+}
+
+/* 2. Impact Level & Priority */
+.soil-result-impact-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem 2rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--color-gray-200);
+}
+
+@media (max-width: 480px) {
+    .soil-result-impact-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+}
+
+.soil-impact-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+@media (min-width: 481px) {
+    .soil-impact-item {
+        flex-direction: row;
+        align-items: center;
+    }
+}
+
+.soil-impact-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--color-gray-700);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.soil-impact-badge {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.soil-impact-badge--low {
+    color: #15803d;
+    background: rgba(34, 197, 94, 0.15);
+}
+
+.soil-impact-badge--moderate {
+    color: #a16207;
+    background: rgba(234, 179, 8, 0.15);
+}
+
+.soil-impact-badge--high {
+    color: #b91c1c;
+    background: rgba(239, 68, 68, 0.12);
+}
+
+/* 3. Risk Scale Row */
+.soil-risk-scale-row {
+    padding: 1.25rem 0;
+}
+
+.soil-gauge-track {
+    height: 10px;
+    background: var(--color-gray-200);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.soil-gauge-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.4s ease, background 0.3s ease;
+}
+
+.soil-gauge-fill.gauge-low { background: linear-gradient(90deg, #22c55e, #16a34a); }
+.soil-gauge-fill.gauge-moderate { background: linear-gradient(90deg, #22c55e, #eab308); }
+.soil-gauge-fill.gauge-high { background: linear-gradient(90deg, #22c55e, #eab308, #ef4444); }
+
+.soil-gauge-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* 4. Contributing Factors Section */
+.soil-result-factors-section {
+    background: var(--color-off-white);
+    border-radius: 12px;
+    padding: 1.25rem;
+    border: 1px solid var(--color-gray-200);
+    margin-bottom: 1rem;
+}
+
+.soil-insight-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-gray-900);
+    margin: 0 0 0.75rem;
+}
+
+.soil-insight-title .lucide-icon {
+    color: var(--color-teal);
+}
+
+.soil-factors-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.soil-factors-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    font-size: 0.8125rem;
+    border-bottom: 1px solid var(--color-gray-100);
+    min-width: 0;
+}
+
+.soil-factors-list li:last-child {
+    border-bottom: none;
+}
+
+.factor-name {
+    color: var(--color-gray-700);
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.factor-value.factor-badge {
+    flex-shrink: 0;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+
+.factor-value.level-high,
+.factor-value.factor-badge.level-high {
+    color: #b91c1c;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.factor-value.level-moderate,
+.factor-value.factor-badge.level-moderate {
+    color: #a16207;
+    background: rgba(234, 179, 8, 0.12);
+}
+
+.factor-value.level-low,
+.factor-value.factor-badge.level-low {
+    color: #15803d;
+    background: rgba(34, 197, 94, 0.1);
+}
+
+/* 5. Action Buttons Row */
+.soil-result-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1.25rem 0 0;
+    border-top: 1px solid var(--color-gray-200);
+}
+
+.soil-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 40px;
+    padding: 10px 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-family: inherit;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+}
+
+.soil-action-primary {
+    background: linear-gradient(135deg, var(--color-teal), var(--color-ocean-blue));
+    color: var(--color-white);
+    border: none;
+}
+
+.soil-action-secondary {
+    background: var(--color-gray-100);
+    color: var(--color-gray-900);
+    border: none;
+}
+
+.soil-action-outline {
+    background: transparent;
+    color: var(--color-ocean-blue);
+    border: 1px solid var(--color-gray-200);
+}
+
+@media (hover: hover) {
+    .soil-action-btn:hover {
+        transform: translateY(-1px);
+    }
+    .soil-action-primary:hover { background: linear-gradient(135deg, var(--color-teal-light), var(--color-teal)); }
+    .soil-action-secondary:hover { background: var(--color-gray-200); }
+    .soil-action-outline:hover { border-color: var(--color-teal); background: var(--color-teal-muted); }
+}
+
+.soil-calculator-risk-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 6px;
+}
+
+.soil-calculator-risk-badge.risk-low {
+    background: rgba(34, 197, 94, 0.12);
+    color: #15803d;
+}
+
+.soil-calculator-risk-badge.risk-moderate {
+    background: rgba(234, 179, 8, 0.15);
+    color: #a16207;
+}
+
+.soil-calculator-risk-badge.risk-high {
+    background: rgba(239, 68, 68, 0.12);
+    color: #b91c1c;
+}
+
+/* Loading state */
+.soil-calculator-result-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-md);
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    color: var(--color-text-muted);
+    font-size: 0.9375rem;
+}
+
+.soil-calculator-result-loading[hidden] {
+    display: none !important;
+}
+
+.soil-calculator-loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 2px solid var(--color-gray-200);
+    border-top-color: var(--color-teal);
+    border-radius: 50%;
+    animation: soilSpinner 0.7s linear infinite;
+}
+
+@keyframes soilSpinner {
+    to { transform: rotate(360deg); }
+}
+
+/* Submit button disabled state */
+.soil-calculator-submit:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.soil-calculator-submit:disabled:hover {
+    transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .soil-calculator-result-card {
+        animation: none;
+    }
+    .soil-calculator-loading-spinner {
+        animation: none;
+    }
+}
+
+@media (max-width: 640px) {
+    .soil-calculator-result-card {
+        padding: 1.25rem 1.5rem;
+        border-radius: 16px;
+    }
+
+    .soil-result-top-row {
+        gap: 0.75rem 1rem;
+        padding-bottom: 1rem;
+    }
+
+    .soil-calculator-result-value {
+        font-size: clamp(1.5rem, 8vw, 2rem);
+    }
+
+    .soil-result-impact-row {
+        padding: 0.75rem 0;
+    }
+
+    .soil-risk-scale-row {
+        padding: 1rem 0;
+    }
+
+    .soil-result-factors-section {
+        padding: 1rem;
+    }
+
+    .soil-result-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .soil-action-btn {
+        width: 100%;
+    }
+}
+
+.soil-calculator-info-intro {
+    font-size: 0.9375rem;
+    color: var(--color-gray-700);
+    margin: 0 0 var(--space-sm);
+}
+
+.soil-calculator-info-model {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-teal);
+    margin: 0 0 var(--space-md);
+}
+
+.soil-calculator-formula-display {
+    display: block;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 0.875rem;
+    background: var(--color-off-white);
+    padding: var(--space-lg);
+    border-radius: 8px;
+    margin: 0 0 var(--space-lg);
+    color: var(--color-gray-900);
+    border: 1px solid var(--color-gray-200);
+}
+
+.soil-calculator-info-list {
+    margin: 0;
+    padding-left: 1.25rem;
+}
+
+.soil-calculator-info-list li {
+    font-size: 0.9375rem;
+    color: var(--color-gray-700);
+    margin-bottom: var(--space-sm);
+    line-height: 1.5;
+}
+
+/* Saved equation (Calculator) */
+.soil-saved-equation-details {
+    margin-bottom: var(--space-lg);
+    padding: var(--space-md);
+    background: var(--color-gray-50);
+    border-radius: 8px;
+    border: 1px solid var(--color-gray-200);
+}
+
+.soil-saved-name-label,
+.soil-saved-formula-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-gray-600);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.25rem;
+}
+
+.soil-saved-name {
+    margin: 0 0 var(--space-sm);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-gray-900);
+}
+
+.soil-saved-formula {
+    margin: 0 0 var(--space-md);
+    font-size: 0.8125rem;
+    font-family: ui-monospace, monospace;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--color-gray-800);
+    background: var(--color-white);
+    padding: 0.75rem;
+    border-radius: 6px;
+    border: 1px solid var(--color-gray-200);
+}
+
+.soil-saved-inputs .form-group {
+    margin-bottom: var(--space-md);
+}
