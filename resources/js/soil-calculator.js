@@ -128,6 +128,157 @@ function getGaugePosition(riskLevel) {
     return { low: 17, moderate: 50, high: 83 }[riskLevel] || 50;
 }
 
+/**
+ * Tree & Vegetation Recommendations based on soil type, risk level, and hazard intensity.
+ * Returns species list, planting strategy, and advisory notes.
+ */
+const TREE_RECOMMENDATIONS = {
+    high: {
+        goalBadge: 'Soil Stabilization',
+        strategy: [
+            'Shoreline buffer — Mangroves and coastal species in intertidal zone.',
+            'Inland slopes — Deep-rooted species (vetiver, bamboo).',
+            'Ground cover — Dense vegetation to reduce runoff.',
+        ],
+        speciesBySoil: {
+            clay: [
+                { name: 'Vetiver Grass', reason: 'Deep root system for slope stabilization' },
+                { name: 'Clumping Bamboo', reason: 'Strong root network for soil binding' },
+                { name: 'Ipil-Ipil (Leucaena)', reason: 'Nitrogen-fixing, rapid growth for erosion control' },
+                { name: 'Talisay', reason: 'Wind-tolerant coastal buffer' },
+                { name: 'Mangrove Species', reason: 'Coastal wave energy reduction' },
+            ],
+            sandy: [
+                { name: 'Vetiver Grass', reason: 'Deep root system for slope stabilization' },
+                { name: 'Mangrove Species', reason: 'Coastal wave energy reduction' },
+                { name: 'Beach Naupaka (Scaevola)', reason: 'Salt-tolerant coastal ground cover' },
+                { name: 'Agoho (Casuarina)', reason: 'Windbreak and sand stabilization' },
+                { name: 'Nipa Palm', reason: 'Coastal wetland stabilization' },
+            ],
+            silty: [
+                { name: 'Vetiver Grass', reason: 'Deep root system for slope stabilization' },
+                { name: 'Clumping Bamboo', reason: 'Strong root network for soil binding' },
+                { name: 'Ipil-Ipil (Leucaena)', reason: 'Nitrogen-fixing, rapid growth for erosion control' },
+                { name: 'Nipa Palm', reason: 'Coastal wetland stabilization' },
+                { name: 'Mangrove Species', reason: 'Coastal wave energy reduction' },
+            ],
+            loamy: [
+                { name: 'Vetiver Grass', reason: 'Deep root system for slope stabilization' },
+                { name: 'Clumping Bamboo', reason: 'Strong root network for soil binding' },
+                { name: 'Ipil-Ipil (Leucaena)', reason: 'Nitrogen-fixing, rapid growth for erosion control' },
+                { name: 'Talisay', reason: 'Wind-tolerant coastal buffer' },
+                { name: 'Mangrove Species', reason: 'Coastal wave energy reduction' },
+            ],
+            peaty: [
+                { name: 'Vetiver Grass', reason: 'Deep root system for slope stabilization' },
+                { name: 'Nipa Palm', reason: 'Wetland and peat stabilization' },
+                { name: 'Mangrove Species', reason: 'Coastal wave energy reduction' },
+                { name: 'Clumping Bamboo', reason: 'Strong root network for soil binding' },
+            ],
+            chalky: [
+                { name: 'Vetiver Grass', reason: 'Deep root system for slope stabilization' },
+                { name: 'Clumping Bamboo', reason: 'Strong root network for soil binding' },
+                { name: 'Talisay', reason: 'Wind-tolerant coastal buffer' },
+                { name: 'Ipil-Ipil (Leucaena)', reason: 'Nitrogen-fixing, rapid growth for erosion control' },
+            ],
+        },
+    },
+    moderate: {
+        goalBadge: 'Vegetation Reinforcement',
+        strategy: [
+            'Shoreline buffer — Coastal vegetation belt.',
+            'Inland slopes — Grasses and shrubs for reinforcement.',
+            'Ground cover — Maintain vegetative cover.',
+        ],
+        speciesBySoil: {
+            clay: [
+                { name: 'Vetiver Grass', reason: 'Deep roots for slope stabilization' },
+                { name: 'Clumping Bamboo', reason: 'Soil binding and windbreak' },
+                { name: 'Ipil-Ipil (Leucaena)', reason: 'Nitrogen-fixing, erosion control' },
+                { name: 'Talisay', reason: 'Coastal buffer species' },
+            ],
+            sandy: [
+                { name: 'Vetiver Grass', reason: 'Deep roots for slope stabilization' },
+                { name: 'Beach Naupaka (Scaevola)', reason: 'Salt-tolerant coastal cover' },
+                { name: 'Agoho (Casuarina)', reason: 'Windbreak and sand stabilization' },
+                { name: 'Mangrove Species', reason: 'Coastal protection' },
+            ],
+            silty: [
+                { name: 'Vetiver Grass', reason: 'Deep roots for slope stabilization' },
+                { name: 'Clumping Bamboo', reason: 'Soil binding' },
+                { name: 'Ipil-Ipil (Leucaena)', reason: 'Nitrogen-fixing, erosion control' },
+                { name: 'Nipa Palm', reason: 'Wetland stabilization' },
+            ],
+            loamy: [
+                { name: 'Vetiver Grass', reason: 'Deep roots for slope stabilization' },
+                { name: 'Clumping Bamboo', reason: 'Soil binding and windbreak' },
+                { name: 'Ipil-Ipil (Leucaena)', reason: 'Nitrogen-fixing, erosion control' },
+                { name: 'Talisay', reason: 'Coastal buffer species' },
+            ],
+            peaty: [
+                { name: 'Vetiver Grass', reason: 'Deep roots for slope stabilization' },
+                { name: 'Nipa Palm', reason: 'Wetland stabilization' },
+                { name: 'Mangrove Species', reason: 'Coastal protection' },
+            ],
+            chalky: [
+                { name: 'Vetiver Grass', reason: 'Deep roots for slope stabilization' },
+                { name: 'Clumping Bamboo', reason: 'Soil binding' },
+                { name: 'Talisay', reason: 'Coastal buffer species' },
+            ],
+        },
+        engineeringNote: null,
+    },
+    low: {
+        goalBadge: 'Ground Cover',
+        strategy: [
+            'Shoreline — Maintain existing coastal vegetation.',
+            'Inland — Light ground cover and grasses.',
+        ],
+        speciesBySoil: {
+            clay: [
+                { name: 'Vetiver Grass', reason: 'Low-maintenance slope stabilization' },
+                { name: 'Carabao Grass', reason: 'Ground cover for soil retention' },
+                { name: 'Ipil-Ipil (Leucaena)', reason: 'Nitrogen-fixing, light cover' },
+            ],
+            sandy: [
+                { name: 'Beach Naupaka (Scaevola)', reason: 'Salt-tolerant coastal ground cover' },
+                { name: 'Carabao Grass', reason: 'Ground cover for soil retention' },
+                { name: 'Vetiver Grass', reason: 'Deep roots for slope stabilization' },
+            ],
+            silty: [
+                { name: 'Vetiver Grass', reason: 'Low-maintenance slope stabilization' },
+                { name: 'Carabao Grass', reason: 'Ground cover for soil retention' },
+                { name: 'Ipil-Ipil (Leucaena)', reason: 'Nitrogen-fixing, light cover' },
+            ],
+            loamy: [
+                { name: 'Vetiver Grass', reason: 'Low-maintenance slope stabilization' },
+                { name: 'Carabao Grass', reason: 'Ground cover for soil retention' },
+                { name: 'Ipil-Ipil (Leucaena)', reason: 'Nitrogen-fixing, light cover' },
+            ],
+            peaty: [
+                { name: 'Nipa Palm', reason: 'Wetland maintenance' },
+                { name: 'Carabao Grass', reason: 'Ground cover for soil retention' },
+            ],
+            chalky: [
+                { name: 'Vetiver Grass', reason: 'Low-maintenance slope stabilization' },
+                { name: 'Carabao Grass', reason: 'Ground cover for soil retention' },
+            ],
+        },
+    },
+};
+
+function getTreeRecommendations(soilType, riskLevel) {
+    const soil = (soilType || 'loamy').toLowerCase();
+    const risk = (riskLevel || 'moderate').toLowerCase();
+    const config = TREE_RECOMMENDATIONS[risk] || TREE_RECOMMENDATIONS.moderate;
+    const species = config.speciesBySoil[soil] || config.speciesBySoil.loamy;
+    return {
+        goalBadge: config.goalBadge || 'Soil Stabilization',
+        species,
+        strategy: config.strategy,
+    };
+}
+
 function getBarWidth(level) {
     return { high: 100, moderate: 60, low: 25 }[level] || 50;
 }
@@ -157,11 +308,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const factorProtection = document.getElementById('factorProtection');
     const factorSoil = document.getElementById('factorSoil');
     const btnRunNew = document.getElementById('btnRunNew');
+    const btnAskTocsea = document.getElementById('btnAskTocsea');
+    const treeRecSection = document.getElementById('treeRecommendationSection');
+    const treeRecLoading = document.getElementById('treeRecLoading');
+    const treeRecContent = document.getElementById('treeRecContent');
+    const treeRecSoilBadge = document.getElementById('treeRecSoilBadge');
+    const treeRecRiskBadge = document.getElementById('treeRecRiskBadge');
+    const treeRecGoalBadge = document.getElementById('treeRecGoalBadge');
+    const treeRecSpeciesList = document.getElementById('treeRecSpeciesList');
+    const treeRecStrategyList = document.getElementById('treeRecStrategyList');
     const infoModelName = document.getElementById('infoModelName');
+    const validationAlert = document.getElementById('soilCalculatorValidationAlert');
     const infoFormulaDisplay = document.getElementById('infoFormulaDisplay');
     const infoFormulaBreakdown = document.getElementById('infoFormulaBreakdown');
 
     let savedEquationsList = [];
+    /** Last calculation context for "Ask TOCSEA About This Result" */
+    let lastCalculationContext = null;
 
     function getSavedEquationsUrl() {
         const page = document.getElementById('soilCalculatorPage');
@@ -270,11 +433,95 @@ document.addEventListener('DOMContentLoaded', () => {
     function showPlaceholder() {
         if (resultEmpty) resultEmpty.removeAttribute('hidden');
         if (resultContent) resultContent.setAttribute('hidden', '');
+        if (treeRecSection) treeRecSection.setAttribute('hidden', '');
     }
 
     function showResult() {
         if (resultEmpty) resultEmpty.setAttribute('hidden', '');
         if (resultContent) resultContent.removeAttribute('hidden');
+    }
+
+    /** Cache for tree recommendations: { key, data } to avoid repeated API calls for same calculation */
+    let treeRecCache = null;
+
+    async function populateTreeRecommendations(context) {
+        if (!treeRecSection || !treeRecSoilBadge || !treeRecRiskBadge || !treeRecGoalBadge || !treeRecSpeciesList || !treeRecStrategyList) return;
+        const { soilType, riskLevel, soilLoss, hazardValues, modelName } = context;
+        const soilLabel = String(soilType || 'Loamy').charAt(0).toUpperCase() + String(soilType || 'loamy').slice(1);
+        const riskLabel = String(riskLevel || 'Moderate').charAt(0).toUpperCase() + String(riskLevel || 'moderate').slice(1);
+
+        treeRecSection.removeAttribute('hidden');
+        treeRecSoilBadge.textContent = soilLabel;
+        treeRecRiskBadge.textContent = riskLabel;
+        treeRecRiskBadge.className = 'soil-tree-badge soil-tree-badge-risk risk-' + (riskLevel || 'moderate');
+
+        const cacheKey = JSON.stringify({ soilType, riskLevel, soilLoss, hazardValues, modelName });
+        if (treeRecCache && treeRecCache.key === cacheKey) {
+            renderTreeRecFromData(treeRecCache.data, soilType, riskLevel);
+            if (treeRecSection) treeRecSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            return;
+        }
+        if (treeRecLoading) treeRecLoading.removeAttribute('hidden');
+        if (treeRecContent) treeRecContent.setAttribute('hidden', '');
+
+        const apiUrl = document.getElementById('soilCalculatorPage')?.dataset?.treeRecommendationsUrl || '/api/tree-recommendations';
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+        try {
+            const res = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrf || '',
+                },
+                body: JSON.stringify({
+                    soil_type: soilType || 'loamy',
+                    predicted_soil_loss: soilLoss,
+                    risk_level: riskLevel || 'moderate',
+                    hazard_values: hazardValues || {},
+                    model_name: modelName || null,
+                }),
+            });
+
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok || data.error) {
+                throw new Error(data.error || 'Failed to load recommendations');
+            }
+
+            treeRecCache = { key: cacheKey, data };
+            renderTreeRecFromData(data, soilType, riskLevel);
+        } catch (err) {
+            const rec = getTreeRecommendations(soilType, riskLevel);
+            treeRecGoalBadge.textContent = rec.goalBadge;
+            treeRecSpeciesList.innerHTML = rec.species.map((s) => `<li><strong>${escapeHtml(s.name)}</strong><span class="soil-tree-reason">${escapeHtml(s.reason)}</span></li>`).join('');
+            treeRecStrategyList.innerHTML = rec.strategy.map((s) => `<li>${escapeHtml(s)}</li>`).join('');
+        } finally {
+            if (treeRecLoading) treeRecLoading.setAttribute('hidden', '');
+            if (treeRecContent) treeRecContent.removeAttribute('hidden');
+            if (treeRecSection) treeRecSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function renderTreeRecFromData(data, soilType, riskLevel) {
+        const species = data.recommended_species || [];
+        const strategy = data.planting_strategy || [];
+        const rec = getTreeRecommendations(soilType, riskLevel);
+        treeRecGoalBadge.textContent = species.length ? 'AI Recommendations' : rec.goalBadge;
+        treeRecSpeciesList.innerHTML = species.length
+            ? species.map((s) => `<li><strong>${escapeHtml(s.name)}</strong><span class="soil-tree-reason">${escapeHtml(s.reason)}</span></li>`).join('')
+            : rec.species.map((s) => `<li><strong>${escapeHtml(s.name)}</strong><span class="soil-tree-reason">${escapeHtml(s.reason)}</span></li>`).join('');
+        treeRecStrategyList.innerHTML = strategy.length
+            ? strategy.map((s) => `<li>${escapeHtml(s)}</li>`).join('')
+            : rec.strategy.map((s) => `<li>${escapeHtml(s)}</li>`).join('');
     }
 
     function areInputsEmpty() {
@@ -299,29 +546,78 @@ document.addEventListener('DOMContentLoaded', () => {
         return !seawall || !precipitation || !tropicalStorm || !floods || !soilType;
     }
 
+    /** Check if all required fields are valid (for button enable/disable). */
+    function isFormValid() {
+        const soilType = document.getElementById('soil_type')?.value?.trim() || '';
+        const savedId = savedEquationSelect?.value?.trim();
+
+        if (savedId) {
+            const eq = savedEquationsList.find((e) => String(e.id) === savedId);
+            const parsed = parseSavedFormula(eq?.formula);
+            if (!parsed || !parsed.variables.length) return false;
+            const allValid = parsed.variables.every((varName) => {
+                const input = document.querySelector(`input[data-variable="${varName}"]`);
+                const val = input?.value?.trim();
+                const num = val === '' ? NaN : parseFloat(val);
+                return !Number.isNaN(num) && num >= 0;
+            });
+            return allValid && soilType !== '';
+        }
+
+        const seawall = parseFloat(document.getElementById('seawall')?.value);
+        const precipitation = parseFloat(document.getElementById('precipitation')?.value);
+        const tropicalStorm = parseFloat(document.getElementById('tropical_storm')?.value);
+        const floods = parseFloat(document.getElementById('floods')?.value);
+        const numValid = !Number.isNaN(seawall) && seawall >= 0 &&
+            !Number.isNaN(precipitation) && precipitation >= 0 &&
+            !Number.isNaN(tropicalStorm) && tropicalStorm >= 0 &&
+            !Number.isNaN(floods) && floods >= 0;
+        return numValid && soilType !== '';
+    }
+
+    function updateSubmitButtonState() {
+        if (!submitBtn) return;
+        const valid = isFormValid();
+        submitBtn.disabled = !valid;
+    }
+
+    function hideValidationAlert() {
+        if (validationAlert) validationAlert.setAttribute('hidden', '');
+    }
+
+    function showValidationAlert() {
+        if (validationAlert) validationAlert.removeAttribute('hidden');
+    }
+
     function initInputWatchers() {
-        function maybeShowPlaceholder() {
+        function onFieldChange() {
             if (areInputsEmpty() && resultContent && !resultContent.hasAttribute('hidden')) {
                 showPlaceholder();
                 resultContent.setAttribute('hidden', '');
             }
+            updateSubmitButtonState();
+            hideValidationAlert();
         }
         inputsToWatch.forEach((id) => {
             const el = document.getElementById(id);
-            el?.addEventListener('input', maybeShowPlaceholder);
-            el?.addEventListener('change', maybeShowPlaceholder);
+            el?.addEventListener('input', onFieldChange);
+            el?.addEventListener('change', onFieldChange);
         });
         form?.addEventListener('input', (e) => {
-            if (e.target?.dataset?.variable) maybeShowPlaceholder();
+            if (e.target?.dataset?.variable) onFieldChange();
         });
         form?.addEventListener('change', (e) => {
-            if (e.target?.dataset?.variable) maybeShowPlaceholder();
+            if (e.target?.dataset?.variable) onFieldChange();
         });
     }
 
-    savedEquationSelect?.addEventListener('change', onSavedEquationChange);
+    savedEquationSelect?.addEventListener('change', () => {
+        onSavedEquationChange();
+        updateSubmitButtonState();
+    });
     loadSavedEquations().then(() => {
         onSavedEquationChange();
+        updateSubmitButtonState();
         const rerunPayloadRaw = document.getElementById('soilCalculatorPage')?.dataset?.rerunPayload?.trim();
         if (rerunPayloadRaw) {
             try {
@@ -350,6 +646,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             const savedInput = document.querySelector(`input[data-variable="${key}"]`);
                             if (savedInput) savedInput.value = inputs[key] != null ? String(inputs[key]) : '';
                         });
+                        updateSubmitButtonState();
                     }, 100);
                 }
             } catch (_) {}
@@ -362,13 +659,19 @@ document.addEventListener('DOMContentLoaded', () => {
             el.setAttribute('hidden', '');
             el.textContent = '';
         });
-        document.querySelectorAll('#soilCalculatorForm input, #soilCalculatorForm select').forEach(el => el.classList.remove('is-invalid'));
+        document.querySelectorAll('#soilCalculatorForm input, #soilCalculatorForm select').forEach(el => {
+            el.classList.remove('is-invalid');
+            el.removeAttribute('aria-invalid');
+        });
     }
 
     function showError(fieldId, message) {
         const input = document.getElementById(fieldId);
         const errorEl = document.getElementById(fieldId + '-error');
-        if (input) input.classList.add('is-invalid');
+        if (input) {
+            input.classList.add('is-invalid');
+            input.setAttribute('aria-invalid', 'true');
+        }
         if (errorEl) {
             errorEl.textContent = message;
             errorEl.removeAttribute('hidden');
@@ -386,22 +689,29 @@ document.addEventListener('DOMContentLoaded', () => {
             const parsed = parseSavedFormula(eq?.formula);
             if (!parsed || !parsed.variables.length) {
                 showError('saved_equation', 'Invalid saved equation or formula.');
-                valid = false;
-            } else {
-                const values = {};
-                parsed.variables.forEach((varName) => {
-                    const input = document.querySelector(`input[data-variable="${varName}"]`);
-                    const val = input?.value?.trim();
-                    const num = val === '' ? NaN : parseFloat(val);
-                    if (Number.isNaN(num)) {
-                        showError(input?.id || 'saved_equation', `Enter a valid number for ${varName}.`);
-                        valid = false;
-                    } else {
-                        values[varName] = num;
-                    }
-                });
-                if (valid) return { useSaved: true, model: { name: eq.equation_name, parsed }, values, soilType: soilType || 'loamy' };
+                return false;
             }
+            const values = {};
+            parsed.variables.forEach((varName) => {
+                const input = document.querySelector(`input[data-variable="${varName}"]`);
+                const val = input?.value?.trim();
+                const num = val === '' ? NaN : parseFloat(val);
+                if (Number.isNaN(num)) {
+                    showError(input?.id || 'saved_equation', `Enter a valid number for ${varName}.`);
+                    valid = false;
+                } else if (num < 0) {
+                    showError(input?.id || 'saved_equation', `Enter a value of 0 or more for ${varName}.`);
+                    valid = false;
+                } else {
+                    values[varName] = num;
+                }
+            });
+            if (!soilType) {
+                showError('soil_type', 'Please select a soil type.');
+                valid = false;
+            }
+            if (!valid) return false;
+            return { useSaved: true, model: { name: eq.equation_name, parsed }, values, soilType };
         }
 
         const seawall = parseFloat(document.getElementById('seawall')?.value);
@@ -436,8 +746,14 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const validated = validateForm();
-        if (!validated) return;
+        if (!validated) {
+            showValidationAlert();
+            const firstInvalid = form.querySelector('input.is-invalid, select.is-invalid');
+            if (firstInvalid) firstInvalid.focus();
+            return;
+        }
 
+        hideValidationAlert();
         resultLoading?.removeAttribute('hidden');
         if (submitBtn) submitBtn.disabled = true;
         resultEmpty?.setAttribute('hidden', '');
@@ -452,6 +768,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const { seawall, precipitation, tropicalStorm, floods, model } = validated;
             soilLoss = model.formula(seawall, precipitation, tropicalStorm, floods);
         }
+        soilLoss = Number.isNaN(soilLoss) ? 0 : soilLoss;
         const risk = getRiskLevel(soilLoss);
         const impactInfo = IMPACT_PRIORITY[risk.level] || IMPACT_PRIORITY.moderate;
         const gaugePos = getGaugePosition(risk.level);
@@ -467,7 +784,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const factors = getContributingFactors(typhoonsForFactors, floodsForFactors, seawallForFactors, validated.soilType);
 
         const modelName = validated.model?.name || (PREDICTION_MODELS[DEFAULT_MODEL_ID] && !validated.useSaved ? PREDICTION_MODELS[DEFAULT_MODEL_ID].name : 'Model');
-        if (resultValue) resultValue.textContent = Number.isNaN(soilLoss) ? '—' : soilLoss.toLocaleString('en-US', { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+        const isNegative = soilLoss < 0;
+        if (resultValue) {
+            resultValue.textContent = Number.isNaN(soilLoss) ? '—' : parseFloat(Number(soilLoss).toFixed(2)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        const resultValueBlock = document.querySelector('.soil-result-value-block');
+        const resultNegativeNote = document.getElementById('resultNegativeNote');
+        if (resultValueBlock) resultValueBlock.dataset.negative = isNegative ? 'true' : 'false';
+        if (resultNegativeNote) {
+            if (isNegative) resultNegativeNote.removeAttribute('hidden');
+            else resultNegativeNote.setAttribute('hidden', '');
+        }
         if (resultUnit) resultUnit.textContent = 'm²/year';
         if (resultModelBadge) resultModelBadge.textContent = modelName;
         if (resultRiskBadge) {
@@ -504,6 +831,50 @@ document.addEventListener('DOMContentLoaded', () => {
         if (submitBtn) submitBtn.disabled = false;
         showResult();
 
+        const hazardValues = validated.useSaved && validated.values
+            ? { ...validated.values, soil_type: validated.soilType || '' }
+            : {
+                seawall: validated.seawall,
+                precipitation: validated.precipitation,
+                tropical_storm: validated.tropicalStorm,
+                floods: validated.floods,
+                soil_type: validated.soilType || '',
+            };
+        populateTreeRecommendations({
+            soilType: validated.soilType || 'loamy',
+            riskLevel: risk.level,
+            soilLoss,
+            hazardValues,
+            modelName,
+        });
+
+        // Store context for "Ask TOCSEA About This Result"
+        lastCalculationContext = {
+            model_name: modelName,
+            equation: validated.useSaved && validated.model?.formula
+                ? validated.model.formula
+                : (PREDICTION_MODELS[DEFAULT_MODEL_ID]?.formulaDisplay || ''),
+            inputs: validated.useSaved && validated.values
+                ? { ...validated.values, soil_type: validated.soilType || '' }
+                : {
+                    seawall: validated.seawall,
+                    precipitation: validated.precipitation,
+                    tropical_storm: validated.tropicalStorm,
+                    floods: validated.floods,
+                    soil_type: validated.soilType || '',
+                },
+            result: {
+                predicted_soil_loss: String(soilLoss),
+                units: 'm²/year',
+            },
+            risk_level: risk.label,
+            contributing_factors: {
+                storm: factors.storm.label,
+                protection: factors.protection.label,
+                soil: factors.soil.label,
+            },
+        };
+
         const storeUrl = getCalculationHistoryStoreUrl();
         if (storeUrl && !Number.isNaN(soilLoss)) {
             let payload = {
@@ -536,6 +907,32 @@ document.addEventListener('DOMContentLoaded', () => {
         form.reset();
         showPlaceholder();
         if (resultContent) resultContent.setAttribute('hidden', '');
+        lastCalculationContext = null;
+        treeRecCache = null;
+    });
+
+    btnAskTocsea?.addEventListener('click', () => {
+        if (!lastCalculationContext) return;
+        const withContextUrl = document.getElementById('soilCalculatorPage')?.dataset?.askTocseaWithContextUrl || '/ask-tocsea/with-context';
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = withContextUrl;
+        form.style.display = 'none';
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        if (csrf) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = csrf;
+            form.appendChild(csrfInput);
+        }
+        const contextInput = document.createElement('input');
+        contextInput.type = 'hidden';
+        contextInput.name = 'calculation_context';
+        contextInput.value = JSON.stringify(lastCalculationContext);
+        form.appendChild(contextInput);
+        document.body.appendChild(form);
+        form.submit();
     });
 
     document.getElementById('btnModelDetails')?.addEventListener('click', (e) => {

@@ -9,7 +9,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    @vite(['resources/css/landing.css', 'resources/css/dashboard.css', 'resources/js/dashboard.js'])
+    @vite(array_merge(
+        ['resources/css/landing.css', 'resources/css/dashboard.css', 'resources/js/dashboard.js'],
+        request()->routeIs('settings.*') ? ['resources/css/settings.css', 'resources/js/settings.js'] : []
+    ))
     @stack('styles')
 </head>
 <body class="dashboard-page">
@@ -33,7 +36,7 @@
                     <i data-lucide="history" class="lucide-icon lucide-icon-nav" aria-hidden="true"></i>
                     <span class="top-nav-tool-label">Calculation History</span>
                 </a>
-                <a href="#ask-tocsea" class="top-nav-tool" data-action="ask-tocsea" aria-label="Ask TOCSEA">
+                <a href="{{ route('ask-tocsea') }}" class="top-nav-tool {{ request()->routeIs('ask-tocsea') ? 'is-active' : '' }}" data-action="ask-tocsea" aria-label="Ask TOCSEA">
                     <i data-lucide="message-circle" class="lucide-icon lucide-icon-nav" aria-hidden="true"></i>
                     <span class="top-nav-tool-label">Ask TOCSEA</span>
                 </a>
@@ -46,7 +49,7 @@
                         <i data-lucide="chevron-down" class="lucide-icon lucide-icon-sm top-nav-user-chevron" aria-hidden="true"></i>
                     </button>
                     <div class="top-nav-user-dropdown" id="top-nav-user-dropdown" role="menu" aria-hidden="true">
-                        <a href="#" class="top-nav-dropdown-item" role="menuitem" data-action="settings">
+                        <a href="{{ route('settings.index') }}" class="top-nav-dropdown-item {{ request()->routeIs('settings.*') ? 'is-active' : '' }}" role="menuitem" data-action="settings">
                             <i data-lucide="settings" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
                             <span>Settings</span>
                         </a>

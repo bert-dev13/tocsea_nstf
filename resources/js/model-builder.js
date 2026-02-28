@@ -1,10 +1,95 @@
 /**
  * TOCSEA Model Builder - Multiple linear regression UI
+ * Lucide: import icons and createIcons so SVG renders (no global dependency).
  */
 
+import {
+    createIcons,
+    Box,
+    Bookmark,
+    Download,
+    Play,
+    BarChart2,
+    Copy,
+    Save,
+    RefreshCw,
+    Check,
+    CheckCircle,
+} from 'lucide';
+
+const MB_ICONS = { Box, Bookmark, Download, Play, BarChart2, Copy, Save, RefreshCw, Check, CheckCircle };
+
+const MB_SAVE_SUCCESS_FLAG = 'mbEquationSavedSuccess';
+
+if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(MB_SAVE_SUCCESS_FLAG) === '1') {
+    if (typeof history !== 'undefined' && history.scrollRestoration) {
+        history.scrollRestoration = 'manual';
+    }
+}
+
+function createMbIcons() {
+    createIcons({ icons: MB_ICONS, nameAttr: 'data-lucide' });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    const CHECK_CIRCLE_SVG = '<svg class="mb-save-toast-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+    const TOAST_DURATION_MS = 2500;
+    let mbToastDismissTimeout = null;
+
+    function showToast(message) {
+        let wrap = document.getElementById('mbSaveToastWrap');
+        if (!wrap) {
+            wrap = document.createElement('div');
+            wrap.id = 'mbSaveToastWrap';
+            wrap.className = 'mb-save-toast-wrap';
+            wrap.setAttribute('aria-live', 'polite');
+            wrap.setAttribute('aria-atomic', 'true');
+            document.body.appendChild(wrap);
+        }
+        let toast = wrap.querySelector('.mb-save-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.className = 'mb-save-toast';
+            wrap.appendChild(toast);
+        }
+        if (mbToastDismissTimeout) {
+            clearTimeout(mbToastDismissTimeout);
+            mbToastDismissTimeout = null;
+        }
+        toast.innerHTML = CHECK_CIRCLE_SVG + '<span>' + String(message).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>';
+        toast.classList.remove('mb-save-toast-visible');
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                toast.classList.add('mb-save-toast-visible');
+            });
+        });
+        mbToastDismissTimeout = setTimeout(() => {
+            toast.classList.remove('mb-save-toast-visible');
+            mbToastDismissTimeout = null;
+        }, TOAST_DURATION_MS);
+    }
+
+    function showSaveSuccessToastOnLoad() {
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        showToast('Equation saved successfully.');
+    }
+
+    try {
+        if (sessionStorage.getItem(MB_SAVE_SUCCESS_FLAG) === '1') {
+            if (typeof history !== 'undefined' && history.scrollRestoration) {
+                history.scrollRestoration = 'manual';
+            }
+            window.scrollTo(0, 0);
+            document.documentElement.scrollTop = 0;
+            document.body.scrollTop = 0;
+            sessionStorage.removeItem(MB_SAVE_SUCCESS_FLAG);
+            requestAnimationFrame(() => showSaveSuccessToastOnLoad());
+        }
+    } catch (_) { /* ignore */ }
+
     const btnRun = document.getElementById('btnRunRegression');
-    const modelSelect = document.getElementById('modelSelect');
     const inputTable = document.getElementById('inputTable');
     const resultsEmpty = document.getElementById('resultsEmpty');
     const resultsLoading = document.getElementById('resultsLoading');
@@ -25,8 +110,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const noSignificantPredictors = document.getElementById('noSignificantPredictors');
     const significantPredictorsList = document.getElementById('significantPredictorsList');
     const btnSaveEquation = document.getElementById('btnSaveEquation');
-    const btnUseModel = document.getElementById('btnUseModel');
-    const btnDownloadReport = document.getElementById('btnDownloadReport');
     const btnRunNew = document.getElementById('btnRunNew');
 
     const COLUMNS = [
@@ -308,7 +391,7 @@ document.addEventListener('DOMContentLoaded', () => {
         resultsContent.querySelectorAll('.mb-fade-in').forEach((el, i) => {
             el.style.animationDelay = `${i * 0.08}s`;
         });
-        if (typeof lucide !== 'undefined') lucide.createIcons();
+        createMbIcons();
     }
 
     function escapeHtml(s) {
@@ -428,50 +511,6 @@ document.addEventListener('DOMContentLoaded', () => {
         applyExampleToTable(generateRandomDemoData());
     }
 
-    function highlightInputForModel() {
-        if (!inputTableWrap) return;
-        if (modelSelect?.value === 'buguey') {
-            inputTableWrap.classList.add('is-model-active');
-        } else {
-            inputTableWrap.classList.remove('is-model-active');
-        }
-    }
-
-    function loadBugueyDefault() {
-        const baseYear = new Date().getFullYear();
-        const defaults = {
-            Year: baseYear,
-            Tropical_Storms: 2,
-            Severe_Tropical_Storms: 1,
-            Typhoons: 3,
-            Super_Typhoons: 0,
-            Floods: 2,
-            Storm_Surges: 1,
-            Precipitation_mm: 150,
-            Seawall_m: 100,
-            Vegetation_area_sqm: 5000,
-            Coastal_Elevation: 5,
-            Soil_loss_sqm: 45000,
-            Remaining_Land_Area_sqm: 10000,
-        };
-        const rowCount = inputTable.querySelectorAll('tbody tr').length;
-        inputTable.querySelectorAll('tbody tr').forEach((tr, i) => {
-            Object.entries(defaults).forEach(([col, val]) => {
-                const input = tr.querySelector(`input[data-col="${col}"]`);
-                if (input) input.value = col === 'Year' ? baseYear - rowCount + 1 + i : (typeof val === 'number' ? val + (i > 0 ? i * 100 : 0) : val);
-            });
-        });
-    }
-
-    function onModelSelect() {
-        const v = modelSelect.value;
-        highlightInputForModel();
-        if (v === 'buguey') loadBugueyDefault();
-        if (lastRegression && v === 'buguey') {
-            renderResults(lastRegression);
-        }
-    }
-
     function runNewCalculation() {
         inputTable.querySelectorAll('tbody input').forEach((i) => { i.value = ''; });
         clearCellErrors();
@@ -555,10 +594,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const label = btnCopyEquation.querySelector('.lucide-icon')?.nextSibling;
             const orig = btnCopyEquation.innerHTML;
             btnCopyEquation.innerHTML = '<i data-lucide="check" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i> Copied!';
-            if (typeof lucide !== 'undefined') lucide.createIcons();
+            createMbIcons();
             setTimeout(() => {
                 btnCopyEquation.innerHTML = orig;
-                if (typeof lucide !== 'undefined') lucide.createIcons();
+                createMbIcons();
             }, 1500);
         });
     });
@@ -570,9 +609,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     btnRun?.addEventListener('click', runRegression);
-    modelSelect?.addEventListener('change', onModelSelect);
-
-    highlightInputForModel();
 
     // --- Save Equation modal & saved equations table ---
     const saveEquationModal = document.getElementById('saveEquationModal');
@@ -802,7 +838,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } else {
                 closeSaveEquationModal();
-                await loadSavedEquationsTable();
+                try {
+                    sessionStorage.setItem(MB_SAVE_SUCCESS_FLAG, '1');
+                } catch (_) { /* ignore */ }
+                window.location.reload();
             }
         } catch (_) {
             if (saveEquationFormError) { saveEquationFormError.textContent = 'Network error. Please try again.'; saveEquationFormError.hidden = false; }
@@ -875,7 +914,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } else {
                 closeEditEquationModal();
+                showToast('Equation updated successfully.');
+                const scrollY = window.scrollY;
                 await loadSavedEquationsTable(currentSavedPage);
+                window.scrollTo(0, scrollY);
             }
         } catch (_) {
             if (editFormError) { editFormError.textContent = 'Network error. Please try again.'; editFormError.hidden = false; }
@@ -898,7 +940,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json().catch(() => ({}));
             if (res.ok && data?.success) {
                 closeDeleteEquationModal();
+                showToast('Equation deleted successfully.');
+                const scrollY = window.scrollY;
                 await loadSavedEquationsTable(currentSavedPage);
+                window.scrollTo(0, scrollY);
             } else {
                 alert(data?.message || 'Failed to delete equation.');
             }
@@ -921,9 +966,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loadSavedEquationsTable();
 
-    btnUseModel?.addEventListener('click', () => alert('Use Model: Coming soon.'));
-    btnDownloadReport?.addEventListener('click', downloadReport);
     btnRunNew?.addEventListener('click', runNewCalculation);
 
-    if (typeof lucide !== 'undefined') lucide.createIcons();
+    createMbIcons();
 });

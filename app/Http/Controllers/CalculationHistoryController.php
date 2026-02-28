@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreCalculationHistoryRequest;
 use App\Models\CalculationHistory;
 use App\Models\SavedEquation;
 use Illuminate\Http\JsonResponse;
@@ -14,13 +15,11 @@ class CalculationHistoryController extends Controller
     public const PER_PAGE = 10;
 
     /**
-     * Display calculation history with search, filters, pagination.
+     * Build filtered query for index (search, date range, equation, sort).
      */
-    public function index(Request $request): View
+    private function filteredQuery(Request $request)
     {
-        $this->authorize('viewAny', CalculationHistory::class);
         $user = $request->user();
-
         $query = CalculationHistory::forUser($user)
             ->select(['id', 'user_id', 'saved_equation_id', 'equation_name', 'formula_snapshot', 'inputs', 'result', 'notes', 'created_at']);
 
@@ -50,7 +49,17 @@ class CalculationHistoryController extends Controller
         $sort = $request->get('sort', 'newest');
         $query->orderBy('created_at', $sort === 'oldest' ? 'asc' : 'desc');
 
-        $items = $query->paginate(self::PER_PAGE)->withQueryString();
+        return $query;
+    }
+
+    /**
+     * Display calculation history with search, filters, pagination.
+     */
+    public function index(Request $request): View
+    {
+        $this->authorize('viewAny', CalculationHistory::class);
+
+        $items = $this->filteredQuery($request)->paginate(self::PER_PAGE)->withQueryString();
 
         $equationOptions = ['' => 'All equations', '__default__' => 'Default (Buguey)'] + SavedEquation::orderBy('equation_name')
             ->get(['id', 'equation_name'])
@@ -85,18 +94,9 @@ class CalculationHistoryController extends Controller
     /**
      * Store a new calculation (called via AJAX from Soil Calculator).
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreCalculationHistoryRequest $request): JsonResponse
     {
-        $this->authorize('create', CalculationHistory::class);
-        $validated = $request->validate([
-            'saved_equation_id' => ['nullable', 'integer', 'exists:saved_equations,id'],
-            'equation_name' => ['required', 'string', 'max:255'],
-            'formula_snapshot' => ['required', 'string'],
-            'inputs' => ['required', 'array'],
-            'inputs.*' => ['nullable'],
-            'result' => ['required', 'numeric'],
-            'notes' => ['nullable', 'string', 'max:5000'],
-        ]);
+        $validated = $request->validated();
 
         $history = $request->user()->calculationHistories()->create([
             'saved_equation_id' => $validated['saved_equation_id'] ?? null,
@@ -126,6 +126,32 @@ class CalculationHistoryController extends Controller
             'success' => true,
             'message' => 'Calculation removed from history.',
         ]);
+    }
+
+    /**
+     * Export: return all filtered rows (same filters as index, no pagination) for PDF/Excel/Print.
+     */
+    public function export(Request $request): JsonResponse
+    {
+        $this->authorize('viewAny', CalculationHistory::class);
+
+        $items = $this->filteredQuery($request)->get();
+
+        $rows = $items->map(function ($h) {
+            $inputCount = is_array($h->inputs) ? count($h->inputs) : 0;
+            $inputsLabel = $inputCount . ' variable' . ($inputCount !== 1 ? 's' : '');
+
+            return [
+                'id' => $h->id,
+                'date_time' => $h->created_at->format('M j, Y g:i A'),
+                'equation_name' => $h->equation_name,
+                'inputs' => $inputsLabel,
+                'result' => (float) $h->result,
+                'result_formatted' => number_format($h->result, 2) . ' m²/year',
+            ];
+        });
+
+        return response()->json(['rows' => $rows]);
     }
 
     /**

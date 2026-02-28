@@ -29,27 +29,10 @@
         </div>
     </header>
 
-    {{-- Model Selection & Input Data - Combined card --}}
+    {{-- Input Data --}}
     <section class="dashboard-section model-builder-section fade-in-element" id="modelSelectionInputSection">
         <article class="mb-master-card">
-            {{-- Section 1: Prediction Model --}}
-            <div class="mb-master-section mb-model-section">
-                <h2 class="mb-master-section-title">Prediction Model</h2>
-                <div class="mb-model-select-wrap">
-                    <label for="modelSelect" class="mb-model-label">Select model</label>
-                    <div class="mb-model-select-inner">
-                        <select id="modelSelect" class="mb-model-select" aria-describedby="modelSelect-hint">
-                            <option value="buguey" selected>Buguey Regression Model</option>
-                            <option value="saved-1" disabled>Saved Model 1 (Coming Soon)</option>
-                            <option value="saved-2" disabled>Saved Model 2 (Coming Soon)</option>
-                        </select>
-                        <span class="mb-model-default-badge" aria-hidden="true">Default</span>
-                    </div>
-                    <p class="mb-model-hint" id="modelSelect-hint">Choose a preset or previously saved model to load its parameters.</p>
-                </div>
-            </div>
-
-            {{-- Section 2: Input Data --}}
+            {{-- Input Data --}}
             <div class="mb-master-section mb-input-section">
                 <div class="mb-input-section-header">
                     <h2 class="mb-master-section-title">Input Data</h2>
@@ -220,16 +203,12 @@
     {{-- Model actions - compact horizontal bar --}}
     <section class="dashboard-section model-builder-section fade-in-element" id="modelManagementSection" aria-label="Model actions">
         <div class="mb-management-bar">
-            <button type="button" class="mb-management-btn mb-management-primary" id="btnSaveEquation">
+            <button type="button" class="mb-management-btn mb-management-primary" id="btnSaveEquation" aria-label="Save equation">
+                <i data-lucide="save" class="lucide-icon lucide-icon-sm mb-management-btn-icon" aria-hidden="true"></i>
                 <span>Save Equation</span>
             </button>
-            <button type="button" class="mb-management-btn mb-management-secondary" id="btnUseModel">
-                <span>Use Model</span>
-            </button>
-            <button type="button" class="mb-management-btn mb-management-secondary" id="btnDownloadReport">
-                <span>Download Report</span>
-            </button>
-            <button type="button" class="mb-management-btn mb-management-outline" id="btnRunNew">
+            <button type="button" class="mb-management-btn mb-management-outline" id="btnRunNew" aria-label="Run new calculation">
+                <i data-lucide="refresh-cw" class="lucide-icon lucide-icon-sm mb-management-btn-icon" aria-hidden="true"></i>
                 <span>Run New Calculation</span>
             </button>
         </div>
@@ -308,6 +287,7 @@
 
 @push('styles')
     @vite(['resources/css/model-builder.css'])
+    @vite(['resources/css/saved-equations.css'])
 @endpush
 
 @push('scripts')

@@ -17,41 +17,38 @@ import {
     Calendar,
     Calculator,
     ChevronDown,
-    ChevronRight,
     Cloud,
     CloudLightning,
     CloudRain,
     CloudSnow,
     CloudSun,
     Droplets,
+    Eye,
     Folder,
     Gauge,
+    Inbox,
     Layers,
+    Leaf,
     LogOut,
     Map,
     MapPin,
+    MessageCircle,
+    Clock,
     PlusCircle,
     Settings,
+    ShieldAlert,
     SlidersHorizontal,
     Sun,
+    TreePine,
     TrendingUp,
-    TrendingDown,
     Download,
     User,
     Wind,
     Zap,
-    MessageCircle,
     ArrowLeft,
     Bookmark,
     Play,
     Plus,
-    ShieldCheck,
-    Clock,
-    Leaf,
-    Waves,
-    Flower,
-    Inbox,
-    CheckCircle,
 } from 'lucide';
 
 const DASHBOARD_ICONS = {
@@ -65,28 +62,32 @@ const DASHBOARD_ICONS = {
     BarChart2,
     Box,
     Calendar,
+    Clock,
     MessageCircle,
     Calculator,
     ChevronDown,
-    ChevronRight,
     Cloud,
     CloudLightning,
     CloudRain,
     CloudSnow,
     CloudSun,
     Droplets,
+    Eye,
     Folder,
     Gauge,
+    Inbox,
     Layers,
+    Leaf,
     LogOut,
     Map,
     MapPin,
     PlusCircle,
     Settings,
+    ShieldAlert,
     SlidersHorizontal,
     Sun,
+    TreePine,
     TrendingUp,
-    TrendingDown,
     Download,
     User,
     Wind,
@@ -95,13 +96,6 @@ const DASHBOARD_ICONS = {
     Bookmark,
     Play,
     Plus,
-    ShieldCheck,
-    Clock,
-    Leaf,
-    Waves,
-    Flower,
-    Inbox,
-    CheckCircle,
 };
 
 /** Map OpenWeatherMap condition ID to Lucide icon name */
@@ -300,13 +294,6 @@ function renderWeatherToDOM(data) {
             today?.sunrise != null && today?.sunset != null
                 ? `${formatTime(today.sunrise)} / ${formatTime(today.sunset)}`
                 : '—';
-
-    const popToday = data.forecast?.[0]?.pop ?? today?.pop ?? 0;
-    const popPct = typeof popToday === 'number' ? Math.round(popToday * 100) : 0;
-    const rainFill = document.getElementById('weatherRainFill');
-    const rainLabel = document.getElementById('weatherRainLabel');
-    if (rainFill) rainFill.style.width = `${popPct}%`;
-    if (rainLabel) rainLabel.textContent = `${popPct}% rain`;
     if (insightEl) {
         insightEl.textContent = getWeatherInsight(data);
         insightEl.hidden = !insightEl.textContent;

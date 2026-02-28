@@ -6,20 +6,16 @@
 <div class="dashboard-hub mb-se-page-wrap" id="savedEquationsPage"
     data-saved-equations-index-url="{{ route('saved-equations.index') }}"
     data-saved-equations-base-url="{{ url('saved-equations') }}">
-    {{-- Page header: same structure as Model Builder page --}}
+    {{-- Page header: title + subtitle + action button; clean layout --}}
     <header class="dashboard-header fade-in-element">
         <div class="header-card mb-header-inner">
-            <div class="header-main">
-                <div>
-                    <a href="{{ route('model-builder') }}" class="mb-se-back-link" aria-label="Back to Model Builder">
-                        <i data-lucide="arrow-left" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
-                        <span>Model Builder</span>
-                    </a>
-                    <h1 id="mb-se-heading" class="header-title">
-                        <i data-lucide="bookmark" class="lucide-icon lucide-icon-md" aria-hidden="true"></i>
-                        Saved Equations
+            <div class="header-main ch-header-main">
+                <div class="ch-header-content">
+                    <h1 id="mb-se-heading" class="ch-header-title">
+                        <i data-lucide="bookmark" class="lucide-icon lucide-icon-md ch-header-icon" aria-hidden="true"></i>
+                        <span class="ch-header-title-text">Saved Equations</span>
                     </h1>
-                    <p class="header-location" style="color: rgba(255,255,255,0.9); font-weight: 400;">
+                    <p class="ch-header-subtitle">
                         View and manage stored regression equations
                     </p>
                 </div>
@@ -31,10 +27,71 @@
         </div>
     </header>
 
-    {{-- Table card section --}}
+    {{-- Filters: same layout and style as Calculation History --}}
     <section class="dashboard-section fade-in-element mb-se-section" aria-labelledby="mb-se-heading">
+        <div class="mb-se-card ch-filters-card">
+            <div class="mb-se-card-body mb-se-card-body-compact">
+                <div class="ch-filters" id="savedEquationsFilters">
+                    <div class="ch-search-wrap">
+                        <label for="seSearch" class="sr-only">Search by equation name or formula</label>
+                        <input type="search" id="seSearch" placeholder="Search equation name or formula…" class="ch-input ch-search-input" autocomplete="off" aria-label="Search by equation name or formula">
+                    </div>
+                    <div class="ch-filter-row">
+                        <label for="seDateFrom">From</label>
+                        <input type="date" id="seDateFrom" class="ch-input ch-input-date" aria-label="Filter from date">
+                    </div>
+                    <div class="ch-filter-row">
+                        <label for="seDateTo">To</label>
+                        <input type="date" id="seDateTo" class="ch-input ch-input-date" aria-label="Filter to date">
+                    </div>
+                    <div class="ch-filter-row">
+                        <label for="seSort">Sort</label>
+                        <select id="seSort" class="ch-input ch-select" aria-label="Sort order">
+                            <option value="newest">Newest Created</option>
+                            <option value="oldest">Oldest Created</option>
+                            <option value="updated">Recently Updated</option>
+                            <option value="name_az">Name A–Z</option>
+                            <option value="name_za">Name Z–A</option>
+                        </select>
+                    </div>
+                    <div class="ch-filter-actions">
+                        <button type="button" class="ch-btn ch-btn-icon" id="seApplyFilters" aria-label="Apply filters">
+                            <svg class="ch-btn-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                        </button>
+                        <button type="button" class="ch-btn ch-btn-icon" id="seClearFilters" aria-label="Clear filters">
+                            <svg class="ch-btn-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="mb-se-card mb-se-table-card">
             <div class="mb-se-card-body mb-se-card-body-compact">
+                <div class="mb-se-table-toolbar">
+                    <div class="mb-se-toolbar-spacer"></div>
+                    <div class="mb-se-export-wrap">
+                        <button type="button" class="mb-se-export-btn ch-btn ch-btn-primary" id="savedEquationsExportBtn" aria-label="Export options" aria-haspopup="true" aria-expanded="false" aria-controls="savedEquationsExportMenu" disabled>
+                            <i data-lucide="download" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
+                            <span>Export</span>
+                            <i data-lucide="chevron-down" class="lucide-icon lucide-icon-sm mb-se-export-chevron" aria-hidden="true"></i>
+                        </button>
+                        <div id="savedEquationsExportMenu" class="mb-se-export-menu" role="menu" aria-labelledby="savedEquationsExportBtn" hidden>
+                            <button type="button" role="menuitem" class="mb-se-export-item" data-export="excel">
+                                <svg class="mb-se-export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><path d="M14 2v6h6"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg>
+                                <span>Export as Excel</span>
+                            </button>
+                            <button type="button" role="menuitem" class="mb-se-export-item" data-export="pdf">
+                                <svg class="mb-se-export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+                                <span>Export PDF</span>
+                            </button>
+                            <button type="button" role="menuitem" class="mb-se-export-item" data-export="print">
+                                <svg class="mb-se-export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><path d="M6 14h12"/></svg>
+                                <span>Print</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
                 <div class="mb-saved-table-wrap">
                     <div id="savedEquationsEmpty" class="mb-saved-empty">No saved equations yet. Run a regression on the Model Builder page and click Save Equation to store one.</div>
                     <div id="savedEquationsLoading" class="mb-saved-loading" hidden>Loading…</div>
@@ -104,10 +161,11 @@
 </div>
 
 @push('styles')
-    @vite(['resources/css/model-builder.css'])
+    @vite(['resources/css/calculation-history.css'])
+    @vite(['resources/css/saved-equations.css'])
 @endpush
 
 @push('scripts')
-    @vite(['resources/js/model-builder-saved-equations.js'])
+    @vite(['resources/js/saved-equations.js'])
 @endpush
 @endsection

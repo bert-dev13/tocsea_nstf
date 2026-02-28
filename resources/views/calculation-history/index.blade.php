@@ -6,7 +6,9 @@
 <div class="dashboard-hub mb-se-page-wrap" id="calculationHistoryPage"
     data-delete-url="{{ url('calculation-history') }}"
     data-history-base-url="{{ url('calculation-history') }}"
-    data-calculator-url="{{ route('soil-calculator') }}">
+    data-export-url="{{ route('calculation-history.export') }}"
+    data-calculator-url="{{ route('soil-calculator') }}"
+    data-has-records="{{ $histories->isNotEmpty() ? '1' : '0' }}">
     {{-- Page header: title + subtitle only; no back link; clear flex layout --}}
     <header class="dashboard-header fade-in-element">
         <div class="header-card mb-header-inner">
@@ -60,7 +62,14 @@
                             <option value="oldest" {{ request('sort') === 'oldest' ? 'selected' : '' }}>Oldest first</option>
                         </select>
                     </div>
-                    <button type="submit" class="ch-btn ch-btn-primary">Apply</button>
+                    <div class="ch-filter-actions">
+                        <button type="submit" class="ch-btn ch-btn-icon" id="chApplyFilters" aria-label="Apply filters">
+                            <i data-lucide="check" class="lucide-icon" aria-hidden="true"></i>
+                        </button>
+                        <button type="button" class="ch-btn ch-btn-icon" id="chClearFilters" aria-label="Clear filters">
+                            <i data-lucide="x" class="lucide-icon" aria-hidden="true"></i>
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -68,6 +77,30 @@
         {{-- Table card: same structure as Saved Equation page --}}
         <div class="mb-se-card mb-se-table-card">
             <div class="mb-se-card-body mb-se-card-body-compact">
+                <div class="mb-se-table-toolbar">
+                    <div class="mb-se-toolbar-spacer"></div>
+                    <div class="mb-se-export-wrap ch-export-wrap">
+                        <button type="button" class="mb-se-export-btn ch-btn ch-btn-primary" id="chExportBtn" aria-label="Export options" aria-haspopup="true" aria-expanded="false" aria-controls="chExportMenu" disabled>
+                            <i data-lucide="download" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
+                            <span>Export</span>
+                            <i data-lucide="chevron-down" class="lucide-icon lucide-icon-sm mb-se-export-chevron" aria-hidden="true"></i>
+                        </button>
+                        <div id="chExportMenu" class="mb-se-export-menu" role="menu" aria-labelledby="chExportBtn" hidden>
+                            <button type="button" role="menuitem" class="mb-se-export-item" data-export="pdf">
+                                <svg class="mb-se-export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+                                <span>Export PDF</span>
+                            </button>
+                            <button type="button" role="menuitem" class="mb-se-export-item" data-export="excel">
+                                <svg class="mb-se-export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><path d="M14 2v6h6"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg>
+                                <span>Export Excel (XLSX)</span>
+                            </button>
+                            <button type="button" role="menuitem" class="mb-se-export-item" data-export="print">
+                                <svg class="mb-se-export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><path d="M6 14h12"/></svg>
+                                <span>Print</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
                 <div class="mb-saved-table-wrap">
                     {{-- Loading overlay (hidden by default, toggled by JS) --}}
                     <div id="chTableLoading" class="ch-table-loading mb-saved-loading hidden" aria-live="polite" aria-busy="true">Loading…</div>
@@ -142,6 +175,7 @@
             </div>
         </div>
     </section>
+
 </div>
 
 {{-- View Calculation Details modal (reuses mb-modal structure from Saved Equations Edit) --}}
@@ -190,6 +224,7 @@
 @push('styles')
     @vite(['resources/css/model-builder.css'])
     @vite(['resources/css/calculation-history.css'])
+    @vite(['resources/css/saved-equations.css'])
 @endpush
 
 @push('scripts')

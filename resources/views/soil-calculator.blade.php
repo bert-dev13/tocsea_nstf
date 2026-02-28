@@ -6,6 +6,9 @@
 <div class="dashboard-hub" id="soilCalculatorPage"
     data-saved-equations-url="{{ route('saved-equations.index') }}"
     data-calculation-history-store-url="{{ route('calculation-history.store') }}"
+    data-ask-tocsea-url="{{ route('ask-tocsea') }}"
+    data-ask-tocsea-with-context-url="{{ route('ask-tocsea.with-context') }}"
+    data-tree-recommendations-url="{{ route('tree-recommendations.generate') }}"
     data-rerun-payload="{{ $rerunData ? json_encode($rerunData) : '' }}">
     {{-- Page header --}}
     <header class="dashboard-header fade-in-element">
@@ -24,14 +27,17 @@
         </div>
     </header>
 
-    {{-- Input form --}}
-    <section class="dashboard-section soil-calculator-section fade-in-element">
+    {{-- Row 1: Calculator Form --}}
+    <section class="dashboard-section soil-calculator-section soil-calculator-form-section fade-in-element">
         <h2 class="section-title"><i data-lucide="sliders-horizontal" class="lucide-icon lucide-icon-md" aria-hidden="true"></i> Enter Information</h2>
-        <div class="soil-calculator-grid">
-            <article class="weather-card soil-calculator-form-card">
-                <form id="soilCalculatorForm" class="soil-calculator-form" novalidate>
-                    @csrf
-                    <div class="form-group">
+        <div class="soil-calculator-validation-alert" id="soilCalculatorValidationAlert" role="alert" aria-live="polite" hidden>
+            <i data-lucide="alert-triangle" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
+            <span>Please complete all required fields before calculating.</span>
+        </div>
+        <article class="weather-card soil-calculator-form-card">
+            <form id="soilCalculatorForm" class="soil-calculator-form" novalidate>
+                @csrf
+                <div class="form-group">
                         <label for="saved_equation">Select Saved Equation</label>
                         <select id="saved_equation" name="saved_equation" aria-describedby="saved_equation-hint">
                             <option value="">— Use default (Buguey) —</option>
@@ -95,15 +101,20 @@
                         <span class="form-hint" id="soil_type-hint">What type of soil is in the coastal area?</span>
                         <span class="form-error" id="soil_type-error" role="alert" hidden></span>
                     </div>
-                    <button type="submit" class="btn btn-primary soil-calculator-submit">
+                    <div class="soil-calculator-submit-wrap">
+                    <button type="submit" class="btn btn-primary soil-calculator-submit" id="soilCalculatorSubmitBtn" disabled aria-disabled="true">
                         <i data-lucide="calculator" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
                         <span>Calculate Soil Loss</span>
                     </button>
+                    </div>
                 </form>
-            </article>
+        </article>
+    </section>
 
-            {{-- Result card --}}
-            <article class="weather-card soil-calculator-result-wrapper" id="resultCard" aria-live="polite" aria-atomic="true">
+    {{-- Row 2: Predicted Soil Loss Result --}}
+    <section class="dashboard-section soil-calculator-section soil-calculator-result-section fade-in-element">
+        <h2 class="section-title"><i data-lucide="layers" class="lucide-icon lucide-icon-md" aria-hidden="true"></i> Predicted Soil Loss Result</h2>
+        <article class="weather-card soil-calculator-result-wrapper" id="resultCard" aria-live="polite" aria-atomic="true">
                 {{-- Placeholder: shown when no result yet --}}
                 <div class="soil-calculator-result-empty" id="resultEmpty">
                     <i data-lucide="layers" class="lucide-icon lucide-icon-xl" aria-hidden="true"></i>
@@ -120,6 +131,10 @@
                             <span class="soil-calculator-result-value" id="resultValue">—</span>
                             <span class="soil-calculator-result-unit" id="resultUnit">m²/year</span>
                         </div>
+                        <p class="soil-result-negative-note" id="resultNegativeNote" hidden role="note">
+                            <i data-lucide="info" class="lucide-icon lucide-icon-xs" aria-hidden="true"></i>
+                            Negative value indicates possible soil gain, deposition, or model imbalance. Please review input values.
+                        </p>
                         <span class="soil-calculator-risk-badge" id="resultRiskBadge">—</span>
                     </div>
 
@@ -169,6 +184,10 @@
                             <i data-lucide="info" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
                             View Model Details
                         </a>
+                        <button type="button" class="soil-action-btn soil-action-ai" id="btnAskTocsea" aria-label="Ask TOCSEA about this soil loss result">
+                            <i data-lucide="message-circle" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
+                            Ask TOCSEA About This Result
+                        </button>
                     </div>
                 </div>
 
@@ -177,7 +196,57 @@
                     <span class="soil-calculator-loading-spinner"></span>
                     <span>Calculating…</span>
                 </div>
+        </article>
+    </section>
+
+    {{-- Tree & Vegetation Recommendation (shown when results exist, AI-powered) --}}
+    <section class="dashboard-section soil-calculator-section soil-tree-recommendation-section fade-in-element" id="treeRecommendationSection" hidden aria-live="polite">
+        <div class="soil-tree-recommendation-wrapper">
+            <div class="soil-tree-recommendation-loading" id="treeRecLoading" hidden aria-hidden="true">
+                <span class="soil-calculator-loading-spinner"></span>
+                <span>Generating recommendations…</span>
+            </div>
+            <div class="soil-tree-recommendation-content" id="treeRecContent">
+            <header class="soil-tree-recommendation-header">
+                <h2 class="section-title soil-tree-section-title">
+                    <i data-lucide="tree-pine" class="lucide-icon lucide-icon-md soil-tree-title-icon" aria-hidden="true"></i>
+                    Tree & Vegetation Recommendation
+                </h2>
+                <p class="soil-tree-recommendation-subtitle">Suggestions based on soil type and erosion risk.</p>
+            </header>
+            <article class="soil-tree-recommendation-card">
+                <div class="soil-tree-recommendation-badges">
+                    <span class="soil-tree-badge soil-tree-badge-soil" id="treeRecSoilBadge">—</span>
+                    <span class="soil-tree-badge soil-tree-badge-risk" id="treeRecRiskBadge">—</span>
+                    <span class="soil-tree-badge soil-tree-badge-goal" id="treeRecGoalBadge">—</span>
+                </div>
+                <div class="soil-tree-species-section">
+                    <h4 class="soil-tree-subtitle soil-tree-subtitle-with-icon">
+                        <i data-lucide="leaf" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
+                        Recommended Species
+                    </h4>
+                    <ul class="soil-tree-species-list" id="treeRecSpeciesList" role="list">
+                        {{-- Populated by JS --}}
+                    </ul>
+                </div>
+                <div class="soil-tree-strategy-section">
+                    <h4 class="soil-tree-subtitle soil-tree-subtitle-with-icon">
+                        <i data-lucide="layers" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
+                        Planting Strategy
+                    </h4>
+                    <div class="soil-tree-strategy-box">
+                        <ul class="soil-tree-strategy-list" id="treeRecStrategyList" role="list">
+                            {{-- Populated by JS --}}
+                        </ul>
+                    </div>
+                </div>
+                {{-- Advisory footer: always-visible reminder (never conditional on AI response) --}}
+                <footer class="soil-tree-recommendation-footer soil-tree-advisory-callout soil-tree-advisory-always-visible" role="contentinfo">
+                    <i data-lucide="info" class="lucide-icon lucide-icon-sm soil-tree-advisory-icon" aria-hidden="true"></i>
+                    <p class="soil-tree-advisory">This output is generated through an AI-based advisory system and shall not replace technical site assessment. Validation with appropriate environmental authorities is strongly advised.</p>
+                </footer>
             </article>
+            </div>
         </div>
     </section>
 

@@ -1,0 +1,205 @@
+/* ==========================================================================
+   TOCSEA Settings Page - Personal info & Change password
+   Matches dashboard theme (landing.css tokens)
+   ========================================================================== */
+
+/* Match Ask TOCSEA page: same max-width, centering, and padding */
+.settings-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--space-xl);
+}
+
+@media (max-width: 640px) {
+    .settings-page {
+        padding: 0 var(--space-md);
+    }
+}
+
+.settings-section {
+    margin-bottom: var(--space-2xl);
+}
+
+.settings-card {
+    background: var(--color-white);
+    border-radius: 12px;
+    border: 1px solid var(--color-gray-200);
+    box-shadow: 0 2px 8px rgba(10, 37, 64, 0.04);
+    padding: var(--space-xl);
+}
+
+@media (max-width: 640px) {
+    .settings-card {
+        padding: var(--space-lg);
+    }
+}
+
+.settings-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+.settings-form-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.settings-label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-gray-900);
+}
+
+.settings-label .lucide-icon {
+    color: var(--color-ocean-blue);
+}
+
+.settings-required {
+    color: var(--color-teal);
+}
+
+.settings-input {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 0.9375rem;
+    font-family: inherit;
+    color: var(--color-gray-900);
+    background: var(--color-white);
+    border: 1px solid var(--color-gray-200);
+    border-radius: 8px;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.settings-input:hover {
+    border-color: var(--color-gray-500);
+}
+
+.settings-input:focus {
+    outline: none;
+    border-color: var(--color-teal);
+    box-shadow: 0 0 0 3px var(--color-teal-muted);
+}
+
+.settings-input.is-error {
+    border-color: #b91c1c;
+}
+
+.settings-readonly {
+    padding: 10px 12px;
+    font-size: 0.9375rem;
+    color: var(--color-text-muted);
+    background: var(--color-gray-100);
+    border-radius: 8px;
+}
+
+.settings-hint {
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+.settings-error {
+    font-size: 0.8125rem;
+    color: #b91c1c;
+}
+
+.settings-error[hidden] {
+    display: none !important;
+}
+
+.settings-form-actions {
+    margin-top: var(--space-sm);
+}
+
+.settings-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    padding: 10px 20px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    font-family: inherit;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), color var(--transition-fast), opacity var(--transition-fast);
+}
+
+.settings-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.settings-btn-primary {
+    background: var(--color-teal);
+    color: var(--color-white);
+    border: none;
+}
+
+@media (hover: hover) {
+    .settings-btn-primary:hover:not(:disabled) {
+        background: var(--color-teal-light);
+    }
+}
+
+.settings-btn-primary:focus-visible {
+    outline: 2px solid var(--color-teal-light);
+    outline-offset: 2px;
+}
+
+/* Toast */
+.settings-toast {
+    position: fixed;
+    bottom: var(--space-xl);
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-md) var(--space-lg);
+    background: var(--color-gray-900);
+    color: var(--color-white);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(10, 37, 64, 0.25);
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.settings-toast.is-visible {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+    visibility: visible;
+}
+
+.settings-toast .lucide-icon {
+    color: var(--color-teal-light);
+    flex-shrink: 0;
+}
+
+.settings-toast[hidden] {
+    display: none !important;
+}
+
+@media (max-width: 640px) {
+    .settings-toast {
+        left: var(--space-md);
+        right: var(--space-md);
+        bottom: var(--space-lg);
+        transform: translateY(80px);
+        width: auto;
+        max-width: none;
+    }
+
+    .settings-toast.is-visible {
+        transform: translateY(0);
+    }
+}

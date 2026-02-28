@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\AskTocseaController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CalculationHistoryController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\UserSettingsController;
 use App\Http\Controllers\ModelBuilderController;
 use App\Http\Controllers\SavedEquationController;
 use App\Http\Controllers\SoilCalculatorController;
@@ -42,10 +44,25 @@ Route::middleware('auth')->group(function () {
     Route::delete('/saved-equations/{saved_equation}', [SavedEquationController::class, 'destroy'])->name('saved-equations.destroy');
 
     Route::get('/calculation-history', [CalculationHistoryController::class, 'index'])->name('calculation-history.index');
+    Route::get('/calculation-history/export', [CalculationHistoryController::class, 'export'])->name('calculation-history.export');
     Route::get('/calculation-history/{calculation_history}', [CalculationHistoryController::class, 'show'])->name('calculation-history.show');
     Route::post('/api/calculation-history', [CalculationHistoryController::class, 'store'])->name('calculation-history.store');
     Route::delete('/calculation-history/{calculation_history}', [CalculationHistoryController::class, 'destroy'])->name('calculation-history.destroy');
     Route::get('/calculation-history/{calculation_history}/rerun', [CalculationHistoryController::class, 'rerun'])->name('calculation-history.rerun');
+
+    Route::get('/settings', [UserSettingsController::class, 'index'])->name('settings.index');
+    Route::put('/settings/profile', [UserSettingsController::class, 'updateProfile'])->name('settings.profile.update');
+    Route::put('/settings/password', [UserSettingsController::class, 'changePassword'])->name('settings.password.update');
+
+    Route::get('/ask-tocsea', [AskTocseaController::class, 'index'])->name('ask-tocsea');
+    Route::post('/ask-tocsea/with-context', [AskTocseaController::class, 'withContext'])->name('ask-tocsea.with-context');
+    Route::post('/api/ask-tocsea', [AskTocseaController::class, 'send'])
+        ->middleware('throttle:10,1')
+        ->name('ask-tocsea.send');
+
+    Route::post('/api/tree-recommendations', [SoilCalculatorController::class, 'generateTreeRecommendations'])
+        ->middleware('throttle:10,1')
+        ->name('tree-recommendations.generate');
 });
 Route::get('/forgot-password', [AuthController::class, 'showForgotPasswordForm'])->name('password.request');
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->name('password.email');

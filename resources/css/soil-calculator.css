@@ -7,16 +7,11 @@
     color: rgba(255, 255, 255, 0.95);
 }
 
-.soil-calculator-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-xl);
-}
-
-@media (min-width: 768px) {
-    .soil-calculator-grid {
-        grid-template-columns: 1fr 1fr;
-    }
+/* Stacked layout: form and result in separate rows */
+.soil-calculator-form-section .soil-calculator-form-card,
+.soil-calculator-result-section .soil-calculator-result-wrapper {
+    box-shadow: 0 4px 24px rgba(10, 37, 64, 0.08), 0 2px 8px rgba(10, 37, 64, 0.04);
+    border: 1px solid var(--color-gray-200);
 }
 
 .soil-calculator-form-card .form-group {
@@ -76,6 +71,34 @@
     font-size: 0.8125rem;
     color: #dc3545;
     margin-top: var(--space-xs);
+}
+
+/* Top-level validation alert */
+.soil-calculator-validation-alert {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    background: rgba(220, 53, 69, 0.1);
+    border: 1px solid rgba(220, 53, 69, 0.35);
+    border-radius: 8px;
+    font-size: 0.9375rem;
+    color: #b91c1c;
+}
+
+.soil-calculator-validation-alert[hidden] {
+    display: none !important;
+}
+
+.soil-calculator-validation-alert .lucide-icon {
+    flex-shrink: 0;
+    color: #dc3545;
+}
+
+.soil-calculator-submit-wrap {
+    text-align: center;
+    margin-top: var(--space-lg);
 }
 
 .soil-calculator-submit {
@@ -234,6 +257,35 @@
     font-weight: 500;
     color: var(--color-text-muted);
     white-space: nowrap;
+}
+
+.soil-result-adjusted-hint {
+    display: inline-flex;
+    align-items: center;
+    color: var(--color-gray-500);
+    cursor: help;
+}
+
+.soil-result-adjusted-hint[hidden] {
+    display: none !important;
+}
+
+.soil-result-negative-note {
+    flex-basis: 100%;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.375rem;
+    margin: 0.5rem 0 0;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+    color: var(--color-gray-600);
+    background: rgba(59, 130, 246, 0.08);
+    border-radius: 6px;
+    border-left: 3px solid var(--color-teal);
+}
+
+.soil-result-negative-note[hidden] {
+    display: none !important;
 }
 
 /* Risk badge in top row */
@@ -460,6 +512,13 @@
     border: 1px solid var(--color-gray-200);
 }
 
+/* AI-powered feature — slightly highlighted */
+.soil-action-ai {
+    background: linear-gradient(135deg, rgba(14, 107, 107, 0.12), rgba(10, 37, 64, 0.08));
+    color: var(--color-teal);
+    border: 1px solid rgba(14, 107, 107, 0.35);
+}
+
 @media (hover: hover) {
     .soil-action-btn:hover {
         transform: translateY(-1px);
@@ -467,6 +526,7 @@
     .soil-action-primary:hover { background: linear-gradient(135deg, var(--color-teal-light), var(--color-teal)); }
     .soil-action-secondary:hover { background: var(--color-gray-200); }
     .soil-action-outline:hover { border-color: var(--color-teal); background: var(--color-teal-muted); }
+    .soil-action-ai:hover { background: linear-gradient(135deg, var(--color-teal-muted), rgba(14, 107, 107, 0.2)); border-color: var(--color-teal); }
 }
 
 .soil-calculator-risk-badge {
@@ -660,4 +720,316 @@
 
 .soil-saved-inputs .form-group {
     margin-bottom: var(--space-md);
+}
+
+/* --------------------------------------------------------------------------
+   Tree & Vegetation Recommendation (card-style, modern, professional)
+   -------------------------------------------------------------------------- */
+
+/* Section wrapper: soft tinted background, accent border */
+.soil-tree-recommendation-wrapper {
+    position: relative;
+    background: linear-gradient(180deg, rgba(240, 247, 247, 0.6) 0%, var(--color-white) 100%);
+    border: 1px solid rgba(14, 107, 107, 0.2);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(10, 37, 64, 0.06), 0 1px 3px rgba(10, 37, 64, 0.04);
+    padding: 1.5rem 1.75rem;
+}
+
+/* Loading overlay for AI tree recommendations */
+.soil-tree-recommendation-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 16px;
+    font-size: 0.9375rem;
+    color: var(--color-gray-600);
+    z-index: 10;
+}
+
+.soil-tree-recommendation-loading[hidden] {
+    display: none !important;
+}
+
+.soil-tree-recommendation-content[hidden] {
+    display: none !important;
+}
+
+.soil-tree-recommendation-section[hidden] {
+    display: none !important;
+}
+
+.soil-tree-recommendation-header {
+    margin-bottom: 1.25rem;
+}
+
+.soil-tree-section-title {
+    font-size: 1.375rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    line-height: 1.3;
+    color: var(--color-gray-900);
+}
+
+.soil-tree-section-title .soil-tree-title-icon {
+    color: var(--color-teal);
+}
+
+.soil-tree-recommendation-subtitle {
+    font-size: 0.9375rem;
+    color: var(--color-gray-600);
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Main card: white content area - overflow visible so advisory footer is never clipped */
+.soil-tree-recommendation-card {
+    background: var(--color-white);
+    border-radius: 12px;
+    padding: 1.5rem 1.5rem;
+    border: 1px solid var(--color-gray-200);
+    box-shadow: 0 1px 4px rgba(10, 37, 64, 0.04);
+    overflow: visible;
+}
+
+/* Badges: pill style with border + soft background */
+.soil-tree-recommendation-badges {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid var(--color-gray-200);
+}
+
+.soil-tree-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 16px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border: 1px solid transparent;
+}
+
+.soil-tree-badge-soil {
+    background: rgba(34, 139, 34, 0.12);
+    color: #166534;
+    border-color: rgba(34, 139, 34, 0.25);
+}
+
+.soil-tree-badge-goal {
+    background: rgba(13, 61, 86, 0.08);
+    color: var(--color-ocean-blue);
+    border-color: rgba(13, 61, 86, 0.2);
+}
+
+.soil-tree-badge-risk.risk-low {
+    background: rgba(34, 197, 94, 0.15);
+    color: #166534;
+    border-color: rgba(34, 197, 94, 0.35);
+}
+
+.soil-tree-badge-risk.risk-moderate {
+    background: rgba(234, 179, 8, 0.2);
+    color: #854d0e;
+    border-color: rgba(234, 179, 8, 0.4);
+}
+
+.soil-tree-badge-risk.risk-high {
+    background: rgba(220, 38, 38, 0.15);
+    color: #991b1b;
+    border-color: rgba(220, 38, 38, 0.35);
+}
+
+/* Subheadings with icon */
+.soil-tree-subtitle {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-gray-700);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 0.75rem;
+    line-height: 1.4;
+}
+
+.soil-tree-subtitle-with-icon {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.soil-tree-subtitle-with-icon .lucide-icon {
+    color: var(--color-teal);
+}
+
+.soil-tree-species-section {
+    margin-bottom: 1.25rem;
+}
+
+.soil-tree-strategy-section {
+    margin-bottom: 1.25rem;
+}
+
+.soil-tree-species-list,
+.soil-tree-strategy-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* Species items: compact card rows with green check bullet */
+.soil-tree-species-list li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.5rem 0.75rem;
+    padding: 0.75rem 0;
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    border-bottom: 1px solid var(--color-gray-100);
+}
+
+.soil-tree-species-list li:last-child {
+    border-bottom: none;
+}
+
+.soil-tree-species-list li::before {
+    content: '✓';
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 50%;
+    background: rgba(34, 197, 94, 0.2);
+    color: #166534;
+    font-size: 0.6875rem;
+    font-weight: 700;
+}
+
+.soil-tree-species-list li strong {
+    flex: 1 1 calc(100% - 2rem);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-gray-900);
+}
+
+.soil-tree-reason {
+    flex: 1 1 100%;
+    display: block;
+    color: var(--color-gray-600);
+    font-size: 0.875rem;
+    font-weight: 400;
+    margin-left: 2rem;
+}
+
+.soil-tree-reason::before {
+    content: none;
+}
+
+/* Planting Strategy: bordered tinted box */
+.soil-tree-strategy-box {
+    background: rgba(240, 247, 247, 0.5);
+    border: 1px solid rgba(14, 107, 107, 0.15);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+}
+
+.soil-tree-strategy-list li {
+    font-size: 0.875rem;
+    color: var(--color-gray-700);
+    padding: 0.4rem 0;
+    padding-left: 1.25rem;
+    position: relative;
+    line-height: 1.55;
+}
+
+.soil-tree-strategy-list li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    color: var(--color-teal);
+    font-weight: 700;
+}
+
+/* Advisory footer: info-style callout at bottom of Tree Recommendation card - always visible */
+.soil-tree-recommendation-footer.soil-tree-advisory-callout {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+    margin-bottom: 0;
+    padding: 0.875rem 1rem;
+    background: rgba(59, 130, 246, 0.08);
+    border: 1px solid rgba(59, 130, 246, 0.22);
+    border-radius: 8px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+    visibility: visible;
+    overflow: visible;
+}
+
+.soil-tree-advisory-always-visible {
+    display: flex !important;
+    visibility: visible !important;
+}
+
+.soil-tree-advisory-icon {
+    flex-shrink: 0;
+    color: #2563eb;
+    margin-top: 0.125rem;
+}
+
+.soil-tree-advisory {
+    flex: 1 1 min(100%, 20rem);
+    font-size: 0.8125rem;
+    color: var(--color-gray-700);
+    margin: 0;
+    line-height: 1.5;
+    word-wrap: break-word;
+}
+
+@media (max-width: 640px) {
+    .soil-tree-recommendation-wrapper {
+        padding: 1.25rem 1.25rem;
+    }
+
+    .soil-tree-section-title {
+        font-size: 1.25rem;
+    }
+
+    .soil-tree-recommendation-card {
+        padding: 1.25rem 1.25rem;
+    }
+
+    .soil-tree-recommendation-badges {
+        gap: 0.5rem 0.75rem;
+    }
+
+    .soil-tree-species-list li {
+        padding: 0.625rem 0;
+    }
+
+    .soil-tree-strategy-box {
+        padding: 0.875rem 1rem;
+    }
+
+    .soil-tree-recommendation-footer.soil-tree-advisory-callout {
+        padding: 0.75rem 1rem;
+        margin-top: 1rem;
+    }
+
+    .soil-tree-advisory {
+        font-size: 0.8125rem;
+    }
 }

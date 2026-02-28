@@ -39,4 +39,13 @@ return [
         'key' => env('OPENWEATHERMAP_API_KEY'),
     ],
 
+    'together' => [
+        'api_key' => env('TOGETHER_API_KEY'),
+        'base_url' => env('TOGETHER_API_BASE_URL', 'https://api.together.xyz/v1'),
+        'model' => env('TOGETHER_MODEL', 'meta-llama/Llama-3.2-3B-Instruct-Turbo'),
+        'timeout' => (int) env('TOGETHER_TIMEOUT', 60),
+        'max_tokens' => (int) env('TOGETHER_MAX_TOKENS', 800),
+        'temperature' => (float) env('TOGETHER_TEMPERATURE', 0.3),
+    ],
+
 ];

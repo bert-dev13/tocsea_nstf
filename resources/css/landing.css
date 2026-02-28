@@ -605,6 +605,10 @@ p {
     background-color: var(--color-gray-100);
 }
 
+.how-it-works .container {
+    max-width: 1600px;
+}
+
 .section-header {
     text-align: center;
     margin-bottom: var(--space-2xl);
@@ -1096,8 +1100,8 @@ p {
     }
 
     .steps-grid {
-        grid-template-columns: repeat(4, 1fr);
-        gap: var(--space-xl);
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: var(--space-md);
     }
 }
 
