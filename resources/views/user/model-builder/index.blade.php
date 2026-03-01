@@ -53,8 +53,8 @@
                         <tr>
                             <th class="col-num" data-th="num">#</th>
                             <th class="col-year" data-th="Year" title="Year of the record (e.g. 2020)">Year</th>
-                            <th class="col-storm" data-th="Tropical_Storms" title="Number of tropical storms per period">Trop_Storms</th>
                             <th class="col-storm" data-th="Tropical_Depression" title="Number of tropical depressions">Trop_Depressions</th>
+                            <th class="col-storm" data-th="Tropical_Storms" title="Number of tropical storms per period">Trop_Storms</th>
                             <th class="col-storm" data-th="Severe_Tropical_Storms" title="Number of severe tropical storms">Sev_Trop_Storms</th>
                             <th class="col-storm" data-th="Typhoons" title="Number of typhoons">Typhoons</th>
                             <th class="col-storm" data-th="Super_Typhoons" title="Number of super typhoons">Super_Typhoons</th>
@@ -65,7 +65,6 @@
                             <th class="col-infra" data-th="Vegetation_area_sqm" title="Vegetation area in m²">Veg_Area_Sqm</th>
                             <th class="col-infra" data-th="Coastal_Elevation" title="Coastal elevation (m)">Coastal_Elevation</th>
                             <th class="col-target" data-th="Soil_loss_sqm" title="Soil loss (target variable) in m²">Soil_Loss_Sqm <span class="required-star">*</span></th>
-                            <th class="col-target" data-th="Remaining_Land_Area_sqm" title="Optional remaining land area in m²">Rem_Land_Area_Sqm</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -73,8 +72,8 @@
                         <tr data-row="{{ $i }}">
                             <td class="row-num" data-label="">{{ $i }}</td>
                             <td data-label="Year"><input type="number" name="Year" min="1900" max="2100" step="1" placeholder="2024" class="mb-input mb-input-year" data-col="Year" aria-label="Year for row {{ $i }}" title="Year (1900–2100)"></td>
-                            <td data-label="Tropical_Storms"><input type="number" name="Tropical_Storms" min="0" step="0.01" placeholder="0" class="mb-input" data-col="Tropical_Storms" aria-label="Tropical storms"></td>
                             <td data-label="Tropical_Depression"><input type="number" name="Tropical_Depression" min="0" step="0.01" placeholder="0" class="mb-input" data-col="Tropical_Depression" aria-label="Tropical depression"></td>
+                            <td data-label="Tropical_Storms"><input type="number" name="Tropical_Storms" min="0" step="0.01" placeholder="0" class="mb-input" data-col="Tropical_Storms" aria-label="Tropical storms"></td>
                             <td data-label="Severe_Tropical_Storms"><input type="number" name="Severe_Tropical_Storms" min="0" step="0.01" placeholder="0" class="mb-input" data-col="Severe_Tropical_Storms"></td>
                             <td data-label="Typhoons"><input type="number" name="Typhoons" min="0" step="0.01" placeholder="0" class="mb-input" data-col="Typhoons"></td>
                             <td data-label="Super_Typhoons"><input type="number" name="Super_Typhoons" min="0" step="0.01" placeholder="0" class="mb-input" data-col="Super_Typhoons"></td>
@@ -85,7 +84,6 @@
                             <td data-label="Vegetation_area_sqm"><input type="number" name="Vegetation_area_sqm" min="0" step="0.01" placeholder="0" class="mb-input" data-col="Vegetation_area_sqm"></td>
                             <td data-label="Coastal_Elevation"><input type="number" name="Coastal_Elevation" step="0.01" placeholder="0" class="mb-input" data-col="Coastal_Elevation"></td>
                             <td data-label="Soil_loss_sqm"><input type="number" name="Soil_loss_sqm" min="0" step="0.01" placeholder="0" class="mb-input mb-target" data-col="Soil_loss_sqm" required></td>
-                            <td data-label="Remaining_Land_Area_sqm"><input type="number" name="Remaining_Land_Area_sqm" min="0" step="0.01" placeholder="0" class="mb-input mb-optional" data-col="Remaining_Land_Area_sqm"></td>
                         </tr>
                         @endfor
                     </tbody>
@@ -149,14 +147,6 @@
                                 <span class="mb-metric-label">Adjusted R²</span>
                                 <span class="mb-metric-value" id="metricAdjR2">—</span>
                             </div>
-                            <div class="mb-metric">
-                                <span class="mb-metric-label">RMSE</span>
-                                <span class="mb-metric-value" id="metricRMSE">—</span>
-                            </div>
-                            <div class="mb-metric">
-                                <span class="mb-metric-label">MAE</span>
-                                <span class="mb-metric-value" id="metricMAE">—</span>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -183,18 +173,10 @@
                         <span class="mb-metric-label">R²</span>
                         <span class="mb-metric-value" id="metricR2Secondary">—</span>
                     </div>
-                    <div class="mb-metric">
-                        <span class="mb-metric-label">RMSE</span>
-                        <span class="mb-metric-value" id="metricRMSESecondary">—</span>
-                    </div>
-                    <div class="mb-metric">
-                        <span class="mb-metric-label">MAE</span>
-                        <span class="mb-metric-value" id="metricMAESecondary">—</span>
-                    </div>
                 </div>
                 <details class="mb-metrics-details">
                     <summary>Advanced metrics</summary>
-                    <p class="mb-metrics-hint">R² = coefficient of determination. RMSE = root mean squared error. MAE = mean absolute error.</p>
+                    <p class="mb-metrics-hint">R² = coefficient of determination.</p>
                 </details>
             </article>
         </div>

@@ -101,7 +101,7 @@ Builds custom multiple linear regression models for coastal soil loss.
 - Floods, storm surges
 - Precipitation (mm)
 - Seawall length (m)
-- Vegetation area, coastal elevation, remaining land area
+- Vegetation area, coastal elevation
 
 **Flow:**
 

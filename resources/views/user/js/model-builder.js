@@ -100,11 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const coefficientsTbody = document.querySelector('#coefficientsTable tbody');
     const metricR2 = document.getElementById('metricR2');
     const metricAdjR2 = document.getElementById('metricAdjR2');
-    const metricRMSE = document.getElementById('metricRMSE');
-    const metricMAE = document.getElementById('metricMAE');
     const metricR2Secondary = document.getElementById('metricR2Secondary');
-    const metricRMSESecondary = document.getElementById('metricRMSESecondary');
-    const metricMAESecondary = document.getElementById('metricMAESecondary');
     const pValueThresholdInput = document.getElementById('pValueThreshold');
     const generatedModelContent = document.getElementById('generatedModelContent');
     const noSignificantPredictors = document.getElementById('noSignificantPredictors');
@@ -113,9 +109,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnRunNew = document.getElementById('btnRunNew');
 
     const COLUMNS = [
-        'Year', 'Tropical_Storms', 'Tropical_Depression', 'Severe_Tropical_Storms', 'Typhoons', 'Super_Typhoons',
+        'Year', 'Tropical_Depression', 'Tropical_Storms', 'Severe_Tropical_Storms', 'Typhoons', 'Super_Typhoons',
         'Floods', 'Storm_Surges', 'Precipitation_mm', 'Seawall_m', 'Vegetation_area_sqm',
-        'Coastal_Elevation', 'Soil_loss_sqm', 'Remaining_Land_Area_sqm'
+        'Coastal_Elevation', 'Soil_loss_sqm'
     ];
 
     const YEAR_MIN = 1900;
@@ -173,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             COLUMNS.forEach((col) => {
-                if (col === 'Soil_loss_sqm' || col === 'Remaining_Land_Area_sqm' || col === 'Year') return;
+                if (col === 'Soil_loss_sqm' || col === 'Year') return;
                 const v = row[col];
                 if (v && isNaN(parseFloat(v))) {
                     errors.push(`Row ${i + 1}, ${col}: must be numeric.`);
@@ -356,16 +352,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const r2Str = reg.r_squared != null ? String(reg.r_squared) : '—';
         const adjR2Str = reg.adjusted_r_squared != null ? String(reg.adjusted_r_squared) : '—';
-        const rmseStr = reg.rmse != null ? String(reg.rmse) : '—';
-        const maeStr = reg.mae != null ? String(reg.mae) : '—';
 
         if (metricR2) metricR2.textContent = r2Str;
         if (metricAdjR2) metricAdjR2.textContent = adjR2Str;
-        if (metricRMSE) metricRMSE.textContent = rmseStr;
-        if (metricMAE) metricMAE.textContent = maeStr;
         if (metricR2Secondary) metricR2Secondary.textContent = r2Str;
-        if (metricRMSESecondary) metricRMSESecondary.textContent = rmseStr;
-        if (metricMAESecondary) metricMAESecondary.textContent = maeStr;
 
         coefficientsTbody.innerHTML = '';
         const pValues = reg.p_values || {};
@@ -442,26 +432,26 @@ document.addEventListener('DOMContentLoaded', () => {
     function generateRandomDemoData() {
         const baseYear = new Date().getFullYear();
         const base = [
-            { Year: baseYear - 19, Tropical_Storms: 2, Tropical_Depression: 1, Severe_Tropical_Storms: 1, Typhoons: 2, Super_Typhoons: 1, Floods: 2, Storm_Surges: 1, Precipitation_mm: 180, Seawall_m: 80, Vegetation_area_sqm: 4500, Coastal_Elevation: 3, Soil_loss_sqm: 52000, Remaining_Land_Area_sqm: 5000 },
-            { Year: baseYear - 18, Tropical_Storms: 1, Tropical_Depression: 2, Severe_Tropical_Storms: 1, Typhoons: 1, Super_Typhoons: 1, Floods: 1, Storm_Surges: 1, Precipitation_mm: 120, Seawall_m: 150, Vegetation_area_sqm: 6000, Coastal_Elevation: 5, Soil_loss_sqm: 38000, Remaining_Land_Area_sqm: 8000 },
-            { Year: baseYear - 17, Tropical_Storms: 3, Tropical_Depression: 1, Severe_Tropical_Storms: 1, Typhoons: 3, Super_Typhoons: 1, Floods: 3, Storm_Surges: 1, Precipitation_mm: 250, Seawall_m: 60, Vegetation_area_sqm: 3500, Coastal_Elevation: 2, Soil_loss_sqm: 61000, Remaining_Land_Area_sqm: 3000 },
-            { Year: baseYear - 16, Tropical_Storms: 2, Tropical_Depression: 2, Severe_Tropical_Storms: 1, Typhoons: 1, Super_Typhoons: 1, Floods: 1, Storm_Surges: 1, Precipitation_mm: 90, Seawall_m: 200, Vegetation_area_sqm: 7500, Coastal_Elevation: 6, Soil_loss_sqm: 29000, Remaining_Land_Area_sqm: 9000 },
-            { Year: baseYear - 15, Tropical_Storms: 4, Tropical_Depression: 2, Severe_Tropical_Storms: 1, Typhoons: 2, Super_Typhoons: 1, Floods: 2, Storm_Surges: 1, Precipitation_mm: 200, Seawall_m: 100, Vegetation_area_sqm: 5000, Coastal_Elevation: 4, Soil_loss_sqm: 48000, Remaining_Land_Area_sqm: 6000 },
-            { Year: baseYear - 14, Tropical_Storms: 1, Tropical_Depression: 1, Severe_Tropical_Storms: 1, Typhoons: 1, Super_Typhoons: 1, Floods: 2, Storm_Surges: 1, Precipitation_mm: 150, Seawall_m: 120, Vegetation_area_sqm: 5500, Coastal_Elevation: 3, Soil_loss_sqm: 42000, Remaining_Land_Area_sqm: 7000 },
-            { Year: baseYear - 13, Tropical_Storms: 2, Tropical_Depression: 1, Severe_Tropical_Storms: 1, Typhoons: 2, Super_Typhoons: 1, Floods: 1, Storm_Surges: 1, Precipitation_mm: 110, Seawall_m: 180, Vegetation_area_sqm: 6500, Coastal_Elevation: 5, Soil_loss_sqm: 35000, Remaining_Land_Area_sqm: 5500 },
-            { Year: baseYear - 12, Tropical_Storms: 3, Tropical_Depression: 2, Severe_Tropical_Storms: 1, Typhoons: 1, Super_Typhoons: 1, Floods: 3, Storm_Surges: 1, Precipitation_mm: 220, Seawall_m: 70, Vegetation_area_sqm: 4000, Coastal_Elevation: 2, Soil_loss_sqm: 55000, Remaining_Land_Area_sqm: 4000 },
-            { Year: baseYear - 11, Tropical_Storms: 2, Tropical_Depression: 1, Severe_Tropical_Storms: 1, Typhoons: 3, Super_Typhoons: 1, Floods: 2, Storm_Surges: 1, Precipitation_mm: 170, Seawall_m: 140, Vegetation_area_sqm: 5800, Coastal_Elevation: 4, Soil_loss_sqm: 40000, Remaining_Land_Area_sqm: 6500 },
-            { Year: baseYear - 10, Tropical_Storms: 1, Tropical_Depression: 1, Severe_Tropical_Storms: 1, Typhoons: 1, Super_Typhoons: 1, Floods: 1, Storm_Surges: 1, Precipitation_mm: 140, Seawall_m: 90, Vegetation_area_sqm: 4800, Coastal_Elevation: 3, Soil_loss_sqm: 45000, Remaining_Land_Area_sqm: 5000 },
-            { Year: baseYear - 9, Tropical_Storms: 2, Tropical_Depression: 2, Severe_Tropical_Storms: 1, Typhoons: 2, Super_Typhoons: 1, Floods: 2, Storm_Surges: 1, Precipitation_mm: 165, Seawall_m: 95, Vegetation_area_sqm: 5100, Coastal_Elevation: 4, Soil_loss_sqm: 47000, Remaining_Land_Area_sqm: 5400 },
-            { Year: baseYear - 8, Tropical_Storms: 2, Tropical_Depression: 2, Severe_Tropical_Storms: 1, Typhoons: 1, Super_Typhoons: 1, Floods: 2, Storm_Surges: 1, Precipitation_mm: 130, Seawall_m: 170, Vegetation_area_sqm: 7200, Coastal_Elevation: 5, Soil_loss_sqm: 32000, Remaining_Land_Area_sqm: 8500 },
-            { Year: baseYear - 7, Tropical_Storms: 4, Tropical_Depression: 1, Severe_Tropical_Storms: 1, Typhoons: 3, Super_Typhoons: 1, Floods: 3, Storm_Surges: 1, Precipitation_mm: 240, Seawall_m: 55, Vegetation_area_sqm: 3200, Coastal_Elevation: 2, Soil_loss_sqm: 64000, Remaining_Land_Area_sqm: 2800 },
-            { Year: baseYear - 6, Tropical_Storms: 1, Tropical_Depression: 1, Severe_Tropical_Storms: 1, Typhoons: 1, Super_Typhoons: 1, Floods: 1, Storm_Surges: 1, Precipitation_mm: 85, Seawall_m: 210, Vegetation_area_sqm: 7800, Coastal_Elevation: 7, Soil_loss_sqm: 26000, Remaining_Land_Area_sqm: 9500 },
-            { Year: baseYear - 5, Tropical_Storms: 3, Tropical_Depression: 2, Severe_Tropical_Storms: 1, Typhoons: 2, Super_Typhoons: 1, Floods: 2, Storm_Surges: 1, Precipitation_mm: 190, Seawall_m: 110, Vegetation_area_sqm: 5200, Coastal_Elevation: 4, Soil_loss_sqm: 46000, Remaining_Land_Area_sqm: 5800 },
-            { Year: baseYear - 4, Tropical_Storms: 1, Tropical_Depression: 1, Severe_Tropical_Storms: 1, Typhoons: 2, Super_Typhoons: 1, Floods: 2, Storm_Surges: 1, Precipitation_mm: 155, Seawall_m: 125, Vegetation_area_sqm: 5600, Coastal_Elevation: 3, Soil_loss_sqm: 41000, Remaining_Land_Area_sqm: 7200 },
-            { Year: baseYear - 3, Tropical_Storms: 2, Tropical_Depression: 2, Severe_Tropical_Storms: 1, Typhoons: 1, Super_Typhoons: 1, Floods: 1, Storm_Surges: 1, Precipitation_mm: 105, Seawall_m: 195, Vegetation_area_sqm: 6800, Coastal_Elevation: 5, Soil_loss_sqm: 34000, Remaining_Land_Area_sqm: 6000 },
-            { Year: baseYear - 2, Tropical_Storms: 3, Tropical_Depression: 1, Severe_Tropical_Storms: 1, Typhoons: 2, Super_Typhoons: 1, Floods: 3, Storm_Surges: 1, Precipitation_mm: 215, Seawall_m: 65, Vegetation_area_sqm: 3900, Coastal_Elevation: 3, Soil_loss_sqm: 56000, Remaining_Land_Area_sqm: 4200 },
-            { Year: baseYear - 1, Tropical_Storms: 2, Tropical_Depression: 2, Severe_Tropical_Storms: 1, Typhoons: 2, Super_Typhoons: 1, Floods: 2, Storm_Surges: 1, Precipitation_mm: 175, Seawall_m: 130, Vegetation_area_sqm: 5400, Coastal_Elevation: 4, Soil_loss_sqm: 43000, Remaining_Land_Area_sqm: 6200 },
-            { Year: baseYear, Tropical_Storms: 1, Tropical_Depression: 1, Severe_Tropical_Storms: 1, Typhoons: 1, Super_Typhoons: 1, Floods: 1, Storm_Surges: 1, Precipitation_mm: 145, Seawall_m: 85, Vegetation_area_sqm: 4900, Coastal_Elevation: 3, Soil_loss_sqm: 44000, Remaining_Land_Area_sqm: 5100 },
+            { Year: baseYear - 19, Tropical_Depression: 1, Tropical_Storms: 2, Severe_Tropical_Storms: 1, Typhoons: 2, Super_Typhoons: 1, Floods: 2, Storm_Surges: 1, Precipitation_mm: 180, Seawall_m: 80, Vegetation_area_sqm: 4500, Coastal_Elevation: 3, Soil_loss_sqm: 52000 },
+            { Year: baseYear - 18, Tropical_Depression: 2, Tropical_Storms: 1, Severe_Tropical_Storms: 1, Typhoons: 1, Super_Typhoons: 1, Floods: 1, Storm_Surges: 1, Precipitation_mm: 120, Seawall_m: 150, Vegetation_area_sqm: 6000, Coastal_Elevation: 5, Soil_loss_sqm: 38000 },
+            { Year: baseYear - 17, Tropical_Depression: 1, Tropical_Storms: 3, Severe_Tropical_Storms: 1, Typhoons: 3, Super_Typhoons: 1, Floods: 3, Storm_Surges: 1, Precipitation_mm: 250, Seawall_m: 60, Vegetation_area_sqm: 3500, Coastal_Elevation: 2, Soil_loss_sqm: 61000 },
+            { Year: baseYear - 16, Tropical_Depression: 2, Tropical_Storms: 2, Severe_Tropical_Storms: 1, Typhoons: 1, Super_Typhoons: 1, Floods: 1, Storm_Surges: 1, Precipitation_mm: 90, Seawall_m: 200, Vegetation_area_sqm: 7500, Coastal_Elevation: 6, Soil_loss_sqm: 29000 },
+            { Year: baseYear - 15, Tropical_Depression: 2, Tropical_Storms: 4, Severe_Tropical_Storms: 1, Typhoons: 2, Super_Typhoons: 1, Floods: 2, Storm_Surges: 1, Precipitation_mm: 200, Seawall_m: 100, Vegetation_area_sqm: 5000, Coastal_Elevation: 4, Soil_loss_sqm: 48000 },
+            { Year: baseYear - 14, Tropical_Depression: 1, Tropical_Storms: 1, Severe_Tropical_Storms: 1, Typhoons: 1, Super_Typhoons: 1, Floods: 2, Storm_Surges: 1, Precipitation_mm: 150, Seawall_m: 120, Vegetation_area_sqm: 5500, Coastal_Elevation: 3, Soil_loss_sqm: 42000 },
+            { Year: baseYear - 13, Tropical_Depression: 1, Tropical_Storms: 2, Severe_Tropical_Storms: 1, Typhoons: 2, Super_Typhoons: 1, Floods: 1, Storm_Surges: 1, Precipitation_mm: 110, Seawall_m: 180, Vegetation_area_sqm: 6500, Coastal_Elevation: 5, Soil_loss_sqm: 35000 },
+            { Year: baseYear - 12, Tropical_Depression: 2, Tropical_Storms: 3, Severe_Tropical_Storms: 1, Typhoons: 1, Super_Typhoons: 1, Floods: 3, Storm_Surges: 1, Precipitation_mm: 220, Seawall_m: 70, Vegetation_area_sqm: 4000, Coastal_Elevation: 2, Soil_loss_sqm: 55000 },
+            { Year: baseYear - 11, Tropical_Depression: 1, Tropical_Storms: 2, Severe_Tropical_Storms: 1, Typhoons: 3, Super_Typhoons: 1, Floods: 2, Storm_Surges: 1, Precipitation_mm: 170, Seawall_m: 140, Vegetation_area_sqm: 5800, Coastal_Elevation: 4, Soil_loss_sqm: 40000 },
+            { Year: baseYear - 10, Tropical_Depression: 1, Tropical_Storms: 1, Severe_Tropical_Storms: 1, Typhoons: 1, Super_Typhoons: 1, Floods: 1, Storm_Surges: 1, Precipitation_mm: 140, Seawall_m: 90, Vegetation_area_sqm: 4800, Coastal_Elevation: 3, Soil_loss_sqm: 45000 },
+            { Year: baseYear - 9, Tropical_Depression: 2, Tropical_Storms: 2, Severe_Tropical_Storms: 1, Typhoons: 2, Super_Typhoons: 1, Floods: 2, Storm_Surges: 1, Precipitation_mm: 165, Seawall_m: 95, Vegetation_area_sqm: 5100, Coastal_Elevation: 4, Soil_loss_sqm: 47000 },
+            { Year: baseYear - 8, Tropical_Depression: 2, Tropical_Storms: 2, Severe_Tropical_Storms: 1, Typhoons: 1, Super_Typhoons: 1, Floods: 2, Storm_Surges: 1, Precipitation_mm: 130, Seawall_m: 170, Vegetation_area_sqm: 7200, Coastal_Elevation: 5, Soil_loss_sqm: 32000 },
+            { Year: baseYear - 7, Tropical_Depression: 1, Tropical_Storms: 4, Severe_Tropical_Storms: 1, Typhoons: 3, Super_Typhoons: 1, Floods: 3, Storm_Surges: 1, Precipitation_mm: 240, Seawall_m: 55, Vegetation_area_sqm: 3200, Coastal_Elevation: 2, Soil_loss_sqm: 64000 },
+            { Year: baseYear - 6, Tropical_Depression: 1, Tropical_Storms: 1, Severe_Tropical_Storms: 1, Typhoons: 1, Super_Typhoons: 1, Floods: 1, Storm_Surges: 1, Precipitation_mm: 85, Seawall_m: 210, Vegetation_area_sqm: 7800, Coastal_Elevation: 7, Soil_loss_sqm: 26000 },
+            { Year: baseYear - 5, Tropical_Depression: 2, Tropical_Storms: 3, Severe_Tropical_Storms: 1, Typhoons: 2, Super_Typhoons: 1, Floods: 2, Storm_Surges: 1, Precipitation_mm: 190, Seawall_m: 110, Vegetation_area_sqm: 5200, Coastal_Elevation: 4, Soil_loss_sqm: 46000 },
+            { Year: baseYear - 4, Tropical_Depression: 1, Tropical_Storms: 1, Severe_Tropical_Storms: 1, Typhoons: 2, Super_Typhoons: 1, Floods: 2, Storm_Surges: 1, Precipitation_mm: 155, Seawall_m: 125, Vegetation_area_sqm: 5600, Coastal_Elevation: 3, Soil_loss_sqm: 41000 },
+            { Year: baseYear - 3, Tropical_Depression: 2, Tropical_Storms: 2, Severe_Tropical_Storms: 1, Typhoons: 1, Super_Typhoons: 1, Floods: 1, Storm_Surges: 1, Precipitation_mm: 105, Seawall_m: 195, Vegetation_area_sqm: 6800, Coastal_Elevation: 5, Soil_loss_sqm: 34000 },
+            { Year: baseYear - 2, Tropical_Depression: 1, Tropical_Storms: 3, Severe_Tropical_Storms: 1, Typhoons: 2, Super_Typhoons: 1, Floods: 3, Storm_Surges: 1, Precipitation_mm: 215, Seawall_m: 65, Vegetation_area_sqm: 3900, Coastal_Elevation: 3, Soil_loss_sqm: 56000 },
+            { Year: baseYear - 1, Tropical_Depression: 2, Tropical_Storms: 2, Severe_Tropical_Storms: 1, Typhoons: 2, Super_Typhoons: 1, Floods: 2, Storm_Surges: 1, Precipitation_mm: 175, Seawall_m: 130, Vegetation_area_sqm: 5400, Coastal_Elevation: 4, Soil_loss_sqm: 43000 },
+            { Year: baseYear, Tropical_Depression: 1, Tropical_Storms: 1, Severe_Tropical_Storms: 1, Typhoons: 1, Super_Typhoons: 1, Floods: 1, Storm_Surges: 1, Precipitation_mm: 145, Seawall_m: 85, Vegetation_area_sqm: 4900, Coastal_Elevation: 3, Soil_loss_sqm: 44000 },
         ];
         return base.map((row) => {
             const r = { ...row };
@@ -542,8 +532,6 @@ document.addEventListener('DOMContentLoaded', () => {
             'Model Summary:',
             '  R²: ' + (lastRegression.r_squared ?? '—'),
             '  Adjusted R²: ' + (lastRegression.adjusted_r_squared ?? '—'),
-            '  RMSE: ' + (lastRegression.rmse ?? '—'),
-            '  MAE: ' + (lastRegression.mae ?? '—'),
             '',
             'All Coefficients (with p-values):',
             '  intercept: ' + lastRegression.intercept,
@@ -569,7 +557,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (col === 'Year' && val) {
             const y = parseInt(val, 10);
             valid = !isNaN(y) && y >= YEAR_MIN && y <= YEAR_MAX;
-        } else if (col !== 'Remaining_Land_Area_sqm' && val) {
+        } else if (val) {
             valid = !isNaN(parseFloat(val));
         }
         input.classList.toggle('is-invalid', !valid);

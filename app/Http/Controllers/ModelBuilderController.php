@@ -11,8 +11,8 @@ class ModelBuilderController extends Controller
 {
     /** Predictor columns (X) for multiple linear regression */
     private const FEATURE_COLUMNS = [
-        'Tropical_Storms',
         'Tropical_Depression',
+        'Tropical_Storms',
         'Severe_Tropical_Storms',
         'Typhoons',
         'Super_Typhoons',
@@ -22,7 +22,6 @@ class ModelBuilderController extends Controller
         'Seawall_m',
         'Vegetation_area_sqm',
         'Coastal_Elevation',
-        'Remaining_Land_Area_sqm', // optional
     ];
 
     /** Target column (y) */
@@ -105,11 +104,8 @@ class ModelBuilderController extends Controller
             foreach ($usedFeatures as $col) {
                 $val = $row[$col] ?? null;
                 if ($val === '' || $val === null) {
-                    if (!in_array($col, ['Remaining_Land_Area_sqm'], true)) {
-                        $hasAllRequired = false;
-                        break;
-                    }
-                    $xRow[$col] = 0;
+                    $hasAllRequired = false;
+                    break;
                 } else {
                     if (!is_numeric($val)) {
                         throw ValidationException::withMessages([
