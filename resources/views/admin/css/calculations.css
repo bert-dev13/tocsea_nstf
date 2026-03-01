@@ -1,0 +1,256 @@
+/* ==========================================================================
+   TOCSEA Admin - Calculation Monitoring (same layout as User Management)
+   ========================================================================== */
+
+.admin-calculations-page .admin-header-card {
+    background: linear-gradient(135deg, var(--color-ocean-blue), var(--color-deep-blue));
+}
+
+/* Risk level badges (consistent with design) */
+.admin-calc-badge-risk {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 6px;
+}
+
+.admin-calc-badge-risk-low {
+    background: var(--color-teal-muted);
+    color: var(--color-teal);
+}
+
+.admin-calc-badge-risk-moderate {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.admin-calc-badge-risk-high {
+    background: rgba(220, 38, 38, 0.1);
+    color: #dc2626;
+}
+
+.admin-calc-badge-risk-na {
+    background: var(--color-gray-100);
+    color: var(--color-gray-500);
+}
+
+/* View modal calculation content */
+.admin-view-calculation-grid {
+    display: grid;
+    gap: var(--space-md);
+}
+
+.admin-view-calculation-row {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: var(--space-md);
+    align-items: start;
+}
+
+.admin-view-calculation-row dt {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+}
+
+.admin-view-calculation-row dd {
+    margin: 0;
+    font-size: 0.9375rem;
+    color: var(--color-gray-900);
+}
+
+.admin-view-calculation-formula {
+    background: var(--color-gray-100);
+    padding: var(--space-md);
+    border-radius: 6px;
+    font-family: ui-monospace, monospace;
+    font-size: 0.8125rem;
+    word-break: break-word;
+}
+
+.admin-view-calculation-advisory {
+    background: #fef3c7;
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    padding: var(--space-md);
+    border-radius: 8px;
+    font-size: 0.875rem;
+    margin-top: var(--space-md);
+}
+
+.admin-calculations-export-wrap {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Export dropdown: container must be position relative so the menu anchors to it */
+.admin-calculations-export-dropdown {
+    position: relative;
+}
+
+/* Export dropdown menu (same behavior as User Management, independent styles) */
+.admin-calculations-export-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + var(--space-xs, 4px));
+    right: 0;
+    min-width: 180px;
+    background: #fff;
+    border: 1px solid var(--color-gray-200, #e5e7eb);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 50;
+    padding: 4px 0;
+}
+
+.admin-calculations-export-dropdown-menu.is-open {
+    display: block;
+}
+
+/* Print header – hidden on screen */
+.admin-calculations-print-header {
+    display: none;
+}
+
+/* --------------------------------------------------------------------------
+   Print styles – full-width report layout, no sidebar/topbar/scrollbars
+   -------------------------------------------------------------------------- */
+@media print {
+    .admin-sidebar,
+    .admin-sidebar-header,
+    .admin-sidebar-nav,
+    .admin-sidebar-footer,
+    .admin-topbar,
+    .admin-sidebar-toggle {
+        display: none !important;
+    }
+
+    .admin-main-wrap {
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+    }
+
+    .admin-main {
+        margin: 0 !important;
+        padding: 12px 16px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: visible !important;
+    }
+
+    body,
+    html {
+        overflow: visible !important;
+        width: 100% !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+    }
+
+    .admin-page {
+        overflow: visible !important;
+        height: auto !important;
+    }
+
+    .admin-hub,
+    .admin-calculations-page {
+        padding: 0 !important;
+    }
+
+    #adminCalculationsTableSkeleton,
+    #adminCalculationsEmpty,
+    .admin-users-toolbar,
+    .admin-users-table-header,
+    .admin-calculations-export-dropdown,
+    .admin-header,
+    .no-print,
+    .admin-users-col-actions,
+    th.admin-users-col-actions,
+    td.admin-users-col-actions,
+    #adminCalculationsPagination,
+    .admin-alert,
+    #adminCalculationsAlert,
+    #adminCalculationsErrorAlert {
+        display: none !important;
+    }
+
+    .admin-calculations-print-header {
+        display: block !important;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .admin-calculations-print-title {
+        margin: 0 0 4px;
+        font-size: 14pt;
+        font-weight: 600;
+        color: #111827;
+    }
+
+    .admin-calculations-print-date {
+        margin: 0;
+        font-size: 10pt;
+        color: #6b7280;
+    }
+
+    .admin-users-table-wrap {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: visible !important;
+        border: none !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+    }
+
+    .admin-calculations-table {
+        width: 100% !important;
+        max-width: 100% !important;
+        font-size: 9pt;
+        border-collapse: collapse;
+    }
+
+    .admin-calculations-table th,
+    .admin-calculations-table td {
+        padding: 6px 8px;
+        border: 1px solid #e5e7eb;
+    }
+
+    .admin-calculations-table th {
+        background: #f3f4f6 !important;
+        font-weight: 600;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    #adminCalculationsTable {
+        display: table !important;
+    }
+
+    .admin-calculations-table thead {
+        display: table-header-group;
+    }
+
+    .admin-calculations-table thead tr {
+        page-break-after: avoid;
+    }
+
+    .admin-calculations-table tbody tr {
+        page-break-inside: avoid;
+    }
+}
+
+/* Filters section spans full page width */
+.admin-calculations-page .admin-users-toolbar {
+    width: 100%;
+}
+
+.admin-calculations-page .admin-users-search-form {
+    width: 100%;
+}

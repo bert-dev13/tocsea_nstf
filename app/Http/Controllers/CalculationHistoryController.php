@@ -66,7 +66,7 @@ class CalculationHistoryController extends Controller
             ->mapWithKeys(fn ($eq) => [$eq->id => $eq->equation_name])
             ->all();
 
-        return view('calculation-history.index', [
+        return view('user.calculation-history.index', [
             'histories' => $items,
             'equationOptions' => $equationOptions,
         ]);
@@ -129,13 +129,24 @@ class CalculationHistoryController extends Controller
     }
 
     /**
-     * Export: return all filtered rows (same filters as index, no pagination) for PDF/Excel/Print.
+     * Export: return filtered rows for PDF/Excel/Print.
+     * scope=page: current page only (respects page, per_page).
+     * scope=all: all matching results.
      */
     public function export(Request $request): JsonResponse
     {
         $this->authorize('viewAny', CalculationHistory::class);
 
-        $items = $this->filteredQuery($request)->get();
+        $scope = $request->get('scope', 'all');
+        $query = $this->filteredQuery($request);
+
+        if ($scope === 'page') {
+            $page = max(1, (int) $request->get('page', 1));
+            $perPage = min(100, max(1, (int) $request->get('per_page', self::PER_PAGE)));
+            $items = $query->forPage($page, $perPage)->get();
+        } else {
+            $items = $query->get();
+        }
 
         $rows = $items->map(function ($h) {
             $inputCount = is_array($h->inputs) ? count($h->inputs) : 0;

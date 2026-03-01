@@ -17,7 +17,7 @@ class UserSettingsController extends Controller
     {
         $user = $request->user();
 
-        return view('settings.index', [
+        return view('user.settings.index', [
             'user' => $user,
         ]);
     }

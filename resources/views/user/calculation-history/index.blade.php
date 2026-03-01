@@ -8,7 +8,8 @@
     data-history-base-url="{{ url('calculation-history') }}"
     data-export-url="{{ route('calculation-history.export') }}"
     data-calculator-url="{{ route('soil-calculator') }}"
-    data-has-records="{{ $histories->isNotEmpty() ? '1' : '0' }}">
+    data-has-records="{{ $histories->isNotEmpty() ? '1' : '0' }}"
+    data-per-page="{{ $histories->perPage() ?? 10 }}">
     {{-- Page header: title + subtitle only; no back link; clear flex layout --}}
     <header class="dashboard-header fade-in-element">
         <div class="header-card mb-header-inner">
@@ -86,17 +87,29 @@
                             <i data-lucide="chevron-down" class="lucide-icon lucide-icon-sm mb-se-export-chevron" aria-hidden="true"></i>
                         </button>
                         <div id="chExportMenu" class="mb-se-export-menu" role="menu" aria-labelledby="chExportBtn" hidden>
-                            <button type="button" role="menuitem" class="mb-se-export-item" data-export="pdf">
+                            <button type="button" role="menuitem" class="mb-se-export-item" data-export="pdf" data-scope="page">
                                 <svg class="mb-se-export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
-                                <span>Export PDF</span>
+                                <span>PDF – Current page</span>
                             </button>
-                            <button type="button" role="menuitem" class="mb-se-export-item" data-export="excel">
+                            <button type="button" role="menuitem" class="mb-se-export-item" data-export="pdf" data-scope="all">
+                                <svg class="mb-se-export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+                                <span>PDF – All results</span>
+                            </button>
+                            <button type="button" role="menuitem" class="mb-se-export-item" data-export="excel" data-scope="page">
                                 <svg class="mb-se-export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><path d="M14 2v6h6"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg>
-                                <span>Export Excel (XLSX)</span>
+                                <span>Excel – Current page</span>
                             </button>
-                            <button type="button" role="menuitem" class="mb-se-export-item" data-export="print">
+                            <button type="button" role="menuitem" class="mb-se-export-item" data-export="excel" data-scope="all">
+                                <svg class="mb-se-export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><path d="M14 2v6h6"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/></svg>
+                                <span>Excel – All results</span>
+                            </button>
+                            <button type="button" role="menuitem" class="mb-se-export-item" data-export="print" data-scope="page">
                                 <svg class="mb-se-export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><path d="M6 14h12"/></svg>
-                                <span>Print</span>
+                                <span>Print – Current page</span>
+                            </button>
+                            <button type="button" role="menuitem" class="mb-se-export-item" data-export="print" data-scope="all">
+                                <svg class="mb-se-export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" aria-hidden="true"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><path d="M6 14h12"/></svg>
+                                <span>Print – All results</span>
                             </button>
                         </div>
                     </div>
@@ -222,11 +235,11 @@
 @endsection
 
 @push('styles')
-    @vite(['resources/css/model-builder.css'])
-    @vite(['resources/css/calculation-history.css'])
-    @vite(['resources/css/saved-equations.css'])
+    @vite(['resources/views/user/css/model-builder.css'])
+    @vite(['resources/views/user/css/calculation-history.css'])
+    @vite(['resources/views/user/css/saved-equations.css'])
 @endpush
 
 @push('scripts')
-    @vite(['resources/js/calculation-history.js'])
+    @vite(['resources/views/user/js/calculation-history.js'])
 @endpush

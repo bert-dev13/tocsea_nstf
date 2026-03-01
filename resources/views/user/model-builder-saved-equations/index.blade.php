@@ -161,11 +161,11 @@
 </div>
 
 @push('styles')
-    @vite(['resources/css/calculation-history.css'])
-    @vite(['resources/css/saved-equations.css'])
+    @vite(['resources/views/user/css/calculation-history.css'])
+    @vite(['resources/views/user/css/saved-equations.css'])
 @endpush
 
 @push('scripts')
-    @vite(['resources/js/saved-equations.js'])
+    @vite(['resources/views/user/js/saved-equations.js'])
 @endpush
 @endsection

@@ -270,10 +270,10 @@
 </div>
 
 @push('styles')
-    @vite(['resources/css/soil-calculator.css'])
+    @vite(['resources/views/user/css/soil-calculator.css'])
 @endpush
 
 @push('scripts')
-    @vite(['resources/js/soil-calculator.js'])
+    @vite(['resources/views/user/js/soil-calculator.js'])
 @endpush
 @endsection

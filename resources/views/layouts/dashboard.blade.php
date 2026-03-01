@@ -10,8 +10,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     @vite(array_merge(
-        ['resources/css/landing.css', 'resources/css/dashboard.css', 'resources/js/dashboard.js'],
-        request()->routeIs('settings.*') ? ['resources/css/settings.css', 'resources/js/settings.js'] : []
+        ['resources/css/landing.css', 'resources/views/user/css/dashboard.css', 'resources/views/user/js/dashboard.js'],
+        request()->routeIs('settings.*') ? ['resources/views/user/css/settings.css', 'resources/views/user/js/settings.js'] : []
     ))
     @stack('styles')
 </head>
@@ -49,6 +49,12 @@
                         <i data-lucide="chevron-down" class="lucide-icon lucide-icon-sm top-nav-user-chevron" aria-hidden="true"></i>
                     </button>
                     <div class="top-nav-user-dropdown" id="top-nav-user-dropdown" role="menu" aria-hidden="true">
+                        @if(auth()->user()->isAdmin())
+                        <a href="{{ route('admin.dashboard') }}" class="top-nav-dropdown-item" role="menuitem">
+                            <i data-lucide="shield" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
+                            <span>Admin</span>
+                        </a>
+                        @endif
                         <a href="{{ route('settings.index') }}" class="top-nav-dropdown-item {{ request()->routeIs('settings.*') ? 'is-active' : '' }}" role="menuitem" data-action="settings">
                             <i data-lucide="settings" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
                             <span>Settings</span>

@@ -1,0 +1,222 @@
+/* ==========================================================================
+   TOCSEA Admin - Analytics page
+   Charts, geo, activity sections
+   ========================================================================== */
+
+.admin-analytics .admin-section-title .lucide-icon {
+    color: var(--color-teal);
+}
+
+/* Stats grid: 4 columns on large, 2 on medium, 1 on small - balanced, not cramped */
+/* 6 cards: 3 per row, 2 rows */
+.admin-analytics-stats {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-lg);
+}
+
+@media (max-width: 960px) {
+    .admin-analytics-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .admin-analytics-stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Charts section - 2x2 grid, full width, proper spacing */
+.admin-charts-section {
+    margin-bottom: var(--space-2xl);
+}
+
+.admin-charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-xl);
+}
+
+@media (max-width: 960px) {
+    .admin-charts-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.admin-chart-card {
+    background: var(--color-white);
+    border: 1px solid var(--color-gray-200);
+    border-radius: 12px;
+    padding: var(--space-xl);
+    box-shadow: 0 2px 8px rgba(10, 37, 64, 0.06);
+    min-height: 320px;
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-chart-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-gray-700);
+    margin: 0 0 var(--space-lg);
+    padding: 0;
+}
+
+.admin-chart-wrap {
+    flex: 1;
+    min-height: 260px;
+    position: relative;
+}
+
+.admin-chart-wrap-pie {
+    min-height: 280px;
+    max-width: 100%;
+}
+
+.admin-chart-empty {
+    flex: 1;
+    min-height: 260px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-2xl);
+    color: var(--color-text-muted);
+    text-align: center;
+}
+
+.admin-chart-empty .lucide-icon {
+    color: var(--color-gray-200);
+    margin-bottom: var(--space-md);
+}
+
+.admin-chart-empty p {
+    margin: 0;
+    font-size: 0.9375rem;
+}
+
+/* Geographic section */
+.admin-geo-section {
+    margin-bottom: var(--space-2xl);
+}
+
+.admin-geo-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-xl);
+}
+
+@media (max-width: 768px) {
+    .admin-geo-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.admin-geo-card {
+    padding: var(--space-xl);
+}
+
+.admin-geo-card-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-gray-700);
+    margin: 0 0 var(--space-lg);
+    padding: 0;
+}
+
+.admin-geo-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.admin-geo-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-sm) 0;
+    border-bottom: 1px solid var(--color-gray-100);
+}
+
+.admin-geo-item:last-child {
+    border-bottom: none;
+}
+
+.admin-geo-rank {
+    flex-shrink: 0;
+    width: 1.75rem;
+    height: 1.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-teal-muted);
+    color: var(--color-teal);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    border-radius: 6px;
+}
+
+.admin-geo-name {
+    flex: 1;
+    font-size: 0.9375rem;
+    color: var(--color-gray-900);
+}
+
+.admin-geo-count {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+}
+
+/* Recent activity - 3 columns, balanced */
+.admin-activity-section {
+    margin-bottom: var(--space-xl);
+}
+
+.admin-activity-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-xl);
+}
+
+@media (max-width: 1200px) {
+    .admin-activity-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .admin-activity-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.admin-activity-card {
+    padding: var(--space-xl);
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-activity-card-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-gray-700);
+    margin: 0 0 var(--space-lg);
+    padding: 0;
+}
+
+.admin-activity-card .admin-recent-list {
+    flex: 1;
+}
+
+.admin-activity-card .admin-recent-item {
+    padding: var(--space-md) 0;
+}
+
+.admin-activity-card .admin-recent-item:first-child {
+    padding-top: 0;
+}
+
+.admin-activity-card .admin-recent-more {
+    margin-top: auto;
+}

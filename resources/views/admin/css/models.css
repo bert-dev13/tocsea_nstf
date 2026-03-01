@@ -1,0 +1,743 @@
+/* ==========================================================================
+   TOCSEA Admin - Model Management styles
+   ========================================================================== */
+
+.admin-models-page .admin-header-card {
+    background: linear-gradient(135deg, var(--color-ocean-blue), var(--color-deep-blue));
+}
+
+/* Filters section spans full page width (same as Calculation Monitoring) */
+.admin-models-page .admin-users-toolbar {
+    width: 100%;
+}
+
+.admin-models-page .admin-users-search-form {
+    width: 100%;
+}
+
+/* --------------------------------------------------------------------------
+   Modals (match user management page)
+   -------------------------------------------------------------------------- */
+.admin-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-lg);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+}
+
+.admin-modal.is-open {
+    opacity: 1;
+    visibility: visible;
+}
+
+.admin-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+}
+
+.admin-modal-dialog {
+    position: relative;
+    width: 100%;
+    max-width: 560px;
+    max-height: 90vh;
+    background: var(--color-white);
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.admin-modal-dialog-sm {
+    max-width: 480px;
+}
+
+.admin-modal-dialog-view {
+    max-width: 640px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.admin-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-lg) var(--space-xl);
+    border-bottom: 1px solid var(--color-gray-100);
+    flex-shrink: 0;
+}
+
+.admin-modal-title {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-gray-900);
+}
+
+.admin-modal-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: var(--color-gray-500);
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.admin-modal-close:hover {
+    background: var(--color-gray-100);
+    color: var(--color-gray-700);
+}
+
+.admin-modal-body {
+    padding: var(--space-xl);
+    overflow-y: auto;
+    flex: 1;
+}
+
+.admin-modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-md);
+    padding: var(--space-lg) var(--space-xl);
+    border-top: 1px solid var(--color-gray-100);
+    flex-shrink: 0;
+}
+
+.admin-modal-btn {
+    padding: var(--space-md) var(--space-lg);
+    border-radius: 8px;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.admin-modal-btn-secondary {
+    background: var(--color-white);
+    color: var(--color-gray-700);
+    border: 1px solid var(--color-gray-200);
+}
+
+.admin-modal-btn-secondary:hover {
+    background: var(--color-gray-100);
+}
+
+.admin-modal-btn-danger {
+    background: #dc2626;
+    color: var(--color-white);
+    border: none;
+}
+
+.admin-modal-btn-danger:hover {
+    background: #b91c1c;
+}
+
+.admin-modal-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-md);
+    padding: var(--space-xl);
+    color: var(--color-text-muted);
+}
+
+.admin-modal-error {
+    color: #dc2626;
+    font-size: 0.9375rem;
+}
+
+.admin-spin {
+    animation: admin-spin 0.8s linear infinite;
+}
+
+@keyframes admin-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* View Model modal – same layout as User Details */
+#adminViewModelModal.admin-modal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-xl);
+}
+
+#adminViewModelModal .admin-modal-dialog {
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    max-height: calc(100vh - var(--space-xl) * 2);
+    display: flex;
+    flex-direction: column;
+}
+
+#adminViewModelModal .admin-modal-header,
+#adminViewModelModal .admin-modal-body,
+#adminViewModelModal .admin-modal-footer {
+    padding-left: var(--space-xl);
+    padding-right: var(--space-xl);
+}
+
+#adminViewModelModal .admin-modal-header.admin-view-model-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    position: relative;
+    padding-top: var(--space-xl);
+    padding-bottom: var(--space-lg);
+}
+
+.admin-view-model-header-inner {
+    text-align: center;
+    padding-right: 40px;
+}
+
+#adminViewModelModal .admin-modal-header .admin-modal-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-gray-900);
+}
+
+.admin-view-model-subtitle {
+    margin: var(--space-xs) 0 0;
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+    font-weight: 400;
+}
+
+#adminViewModelModal .admin-modal-header .admin-modal-close {
+    position: absolute;
+    top: var(--space-md);
+    right: var(--space-lg);
+}
+
+#adminViewModelModal .admin-modal-body.admin-view-model-body {
+    padding-top: var(--space-xl);
+    padding-bottom: var(--space-xl);
+    max-height: 60vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+}
+
+/* Delete modal */
+.admin-delete-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    background: rgba(220, 38, 38, 0.06);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    border-radius: 8px;
+    color: var(--color-gray-700);
+    font-size: 0.9375rem;
+    margin: 0 0 var(--space-lg);
+}
+
+.admin-delete-warning .lucide-icon {
+    color: #dc2626;
+    flex-shrink: 0;
+}
+
+.admin-delete-info {
+    margin: 0;
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: var(--space-sm) var(--space-md);
+}
+
+.admin-delete-info dt {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+}
+
+.admin-delete-info dd {
+    margin: 0;
+    font-size: 0.9375rem;
+    color: var(--color-gray-900);
+}
+
+/* --------------------------------------------------------------------------
+   Toolbar & table
+   -------------------------------------------------------------------------- */
+.admin-models-toolbar {
+    margin-bottom: var(--space-xl);
+}
+
+.admin-models-search-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+    align-items: center;
+}
+
+.admin-models-search-wrap {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 200px;
+    position: relative;
+}
+
+.admin-models-search-wrap .admin-search-icon {
+    position: absolute;
+    left: var(--space-md);
+    color: var(--color-gray-500);
+    pointer-events: none;
+}
+
+.admin-models-search-input {
+    width: 100%;
+    padding: var(--space-md) var(--space-md) var(--space-md) 2.75rem;
+    border: 1px solid var(--color-gray-200);
+    border-radius: 8px;
+    font-size: 0.9375rem;
+    font-family: inherit;
+    color: var(--color-gray-900);
+    background: var(--color-white);
+}
+
+.admin-models-search-input:focus {
+    outline: none;
+    border-color: var(--color-teal);
+    box-shadow: 0 0 0 3px var(--color-teal-muted);
+}
+
+.admin-models-filter-select {
+    padding: var(--space-md) var(--space-lg);
+    border: 1px solid var(--color-gray-200);
+    border-radius: 8px;
+    font-size: 0.9375rem;
+    font-family: inherit;
+    color: var(--color-gray-900);
+    background: var(--color-white);
+}
+
+.admin-models-search-btn {
+    padding: var(--space-md) var(--space-xl);
+    background: var(--color-teal);
+    color: var(--color-white);
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.admin-models-search-btn:hover {
+    background: var(--color-teal-light);
+}
+
+.admin-models-table-wrap {
+    background: var(--color-white);
+    border: 1px solid var(--color-gray-200);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.admin-models-empty {
+    padding: var(--space-2xl);
+    text-align: center;
+    color: var(--color-text-muted);
+}
+
+.admin-models-empty .lucide-icon {
+    color: var(--color-gray-200);
+    margin-bottom: var(--space-md);
+}
+
+.admin-models-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9375rem;
+}
+
+.admin-models-table th,
+.admin-models-table td {
+    padding: var(--space-md) var(--space-lg);
+    text-align: left;
+}
+
+.admin-models-table th {
+    background: var(--color-gray-100);
+    font-weight: 600;
+    color: var(--color-gray-700);
+}
+
+.admin-models-table tbody tr {
+    border-bottom: 1px solid var(--color-gray-100);
+}
+
+.admin-models-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.admin-models-table tbody tr:hover {
+    background: var(--color-off-white);
+}
+
+.admin-models-cell-name {
+    font-weight: 500;
+    color: var(--color-gray-900);
+}
+
+/* Formula column: full text, no truncation, proper wrap, UTF-8-friendly (×, −, +) */
+.admin-models-col-formula {
+    min-width: 320px;
+    width: 45%;
+}
+
+.admin-models-cell-formula {
+    font-family: ui-monospace, 'Consolas', 'Monaco', monospace;
+    font-size: 0.8125rem;
+    color: var(--color-gray-700);
+    letter-spacing: normal;
+    word-spacing: normal;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    overflow: visible;
+    text-overflow: clip;
+    max-width: none;
+    display: block;
+    vertical-align: top;
+    line-height: 1.4;
+}
+
+.admin-models-badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 6px;
+}
+
+.admin-models-badge-status-approved {
+    background: var(--color-teal-muted);
+    color: var(--color-teal);
+}
+
+.admin-models-badge-status-pending {
+    background: var(--color-gray-100);
+    color: var(--color-gray-600);
+}
+
+.admin-models-badge-status-archived {
+    background: var(--color-gray-100);
+    color: var(--color-gray-500);
+}
+
+.admin-models-badge-type-official {
+    background: rgba(59, 130, 246, 0.15);
+    color: #2563eb;
+}
+
+.admin-models-badge-type-default {
+    background: var(--color-teal-muted);
+    color: var(--color-teal);
+}
+
+.admin-models-badge-type-custom {
+    background: var(--color-gray-100);
+    color: var(--color-gray-600);
+}
+
+.admin-models-col-actions {
+    width: 1%;
+    white-space: nowrap;
+}
+
+.admin-models-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    flex-wrap: wrap;
+}
+
+.admin-models-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid var(--color-gray-200);
+    border-radius: 6px;
+    color: var(--color-gray-600);
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.admin-models-action-btn:hover {
+    background: var(--color-teal-muted);
+    color: var(--color-teal);
+    border-color: var(--color-teal-muted);
+}
+
+.admin-models-action-btn.is-active {
+    background: var(--color-teal-muted);
+    color: var(--color-teal);
+    border-color: var(--color-teal);
+}
+
+.admin-models-action-btn.admin-models-action-delete:hover {
+    background: rgba(220, 38, 38, 0.1);
+    color: #dc2626;
+    border-color: rgba(220, 38, 38, 0.2);
+}
+
+/* View modal content */
+.admin-view-model-body .admin-modal-view-content {
+    padding: 0;
+}
+
+.admin-view-model-field {
+    margin-bottom: var(--space-md);
+}
+
+.admin-view-model-field:last-child {
+    margin-bottom: 0;
+}
+
+.admin-view-model-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 2px;
+}
+
+.admin-view-model-value {
+    font-size: 0.9375rem;
+    color: var(--color-gray-900);
+}
+
+.admin-view-model-formula {
+    font-family: ui-monospace, 'Consolas', 'Monaco', monospace;
+    font-size: 0.875rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    letter-spacing: normal;
+    word-spacing: normal;
+    padding: var(--space-md);
+    background: var(--color-gray-50);
+    border-radius: 8px;
+    border: 1px solid var(--color-gray-200);
+}
+
+.admin-view-model-predictors {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+}
+
+.admin-view-model-predictors li {
+    font-size: 0.8125rem;
+    padding: 4px 10px;
+    background: var(--color-gray-100);
+    border-radius: 6px;
+    color: var(--color-gray-700);
+}
+
+#adminModelsAlert {
+    position: fixed;
+    top: var(--space-lg);
+    left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    opacity: 0;
+    z-index: 1001;
+    margin: 0;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+#adminModelsAlert.admin-alert-popup-visible {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+/* Export dropdown – independent implementation for Model Management */
+.admin-models-export-dropdown {
+    position: relative;
+}
+
+.admin-models-export-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + var(--space-xs, 4px));
+    right: 0;
+    min-width: 180px;
+    background: #fff;
+    border: 1px solid var(--color-gray-200, #e5e7eb);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 50;
+    padding: 4px 0;
+}
+
+.admin-models-export-dropdown-menu.is-open {
+    display: block;
+}
+
+/* Print header – hidden on screen */
+.admin-models-print-header {
+    display: none;
+}
+
+/* --------------------------------------------------------------------------
+   Print styles – clean report layout, no redirect or new tab
+   -------------------------------------------------------------------------- */
+@media print {
+    .admin-sidebar,
+    .admin-sidebar-header,
+    .admin-sidebar-nav,
+    .admin-sidebar-footer,
+    .admin-topbar,
+    .admin-sidebar-toggle {
+        display: none !important;
+    }
+
+    .admin-main-wrap {
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+    }
+
+    .admin-main {
+        margin: 0 !important;
+        padding: 12px 16px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: visible !important;
+    }
+
+    body,
+    html {
+        overflow: visible !important;
+        width: 100% !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
+    }
+
+    .admin-page {
+        overflow: visible !important;
+        height: auto !important;
+    }
+
+    .admin-hub,
+    .admin-models-page {
+        padding: 0 !important;
+    }
+
+    #adminModelsTableSkeleton,
+    #adminModelsEmpty,
+    .admin-users-toolbar,
+    .admin-users-table-header,
+    .admin-models-export-dropdown,
+    .admin-header,
+    .no-print,
+    .admin-models-col-actions,
+    th.admin-models-col-actions,
+    td.admin-models-col-actions,
+    #adminModelsPagination,
+    .admin-alert,
+    #adminModelsAlert,
+    #adminModelsErrorAlert {
+        display: none !important;
+    }
+
+    .admin-models-print-header {
+        display: block !important;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .admin-models-print-title {
+        margin: 0 0 4px;
+        font-size: 14pt;
+        font-weight: 600;
+        color: #111827;
+    }
+
+    .admin-models-print-date {
+        margin: 0;
+        font-size: 10pt;
+        color: #6b7280;
+    }
+
+    .admin-models-table-wrap {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: visible !important;
+        border: none !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+    }
+
+    .admin-models-table {
+        width: 100% !important;
+    }
+
+    /* Formula column: match web UI – full formula, no truncation, correct wrapping and special chars */
+    .admin-models-table .admin-models-col-formula,
+    .admin-models-table td:nth-child(2) {
+        min-width: 200px !important;
+        max-width: none !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        white-space: pre-wrap !important;
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+        letter-spacing: normal !important;
+        word-spacing: normal !important;
+    }
+
+    .admin-models-table .admin-models-cell-formula {
+        white-space: pre-wrap !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .admin-models-table-wrap {
+        overflow-x: auto;
+    }
+
+    .admin-models-table {
+        min-width: 640px;
+    }
+}

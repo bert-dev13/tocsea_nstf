@@ -13,7 +13,9 @@ class AuthController extends Controller
     public function showLoginForm()
     {
         if (Auth::check()) {
-            return redirect()->route('dashboard');
+            return Auth::user()->isAdmin()
+                ? redirect()->route('admin.dashboard')
+                : redirect()->route('dashboard');
         }
         return view('auth.login');
     }
@@ -26,8 +28,21 @@ class AuthController extends Controller
         ]);
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
+            $user = $request->user();
+            if (!$user->isActive()) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                return back()->withErrors([
+                    'email' => 'Your account has been deactivated. Please contact an administrator.',
+                ])->onlyInput('email');
+            }
             $request->session()->regenerate();
-            $request->user()->update(['last_login_at' => now()]);
+            $user->update(['last_login_at' => now()]);
+
+            if ($user->isAdmin()) {
+                return redirect()->route('admin.dashboard');
+            }
 
             return redirect()->intended(route('dashboard'));
         }
@@ -40,7 +55,9 @@ class AuthController extends Controller
     public function showRegisterForm()
     {
         if (Auth::check()) {
-            return redirect()->route('dashboard');
+            return Auth::user()->isAdmin()
+                ? redirect()->route('admin.dashboard')
+                : redirect()->route('dashboard');
         }
         return view('auth.register');
     }
@@ -63,6 +80,9 @@ class AuthController extends Controller
             'province' => $validated['province'],
             'municipality' => $validated['municipality'],
             'barangay' => $validated['barangay'],
+            'role' => 'user',
+            'is_admin' => false,
+            'is_disabled' => false,
         ]);
 
         return redirect()->route('login')

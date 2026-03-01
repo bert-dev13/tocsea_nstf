@@ -55,14 +55,19 @@ class SavedEquationController extends Controller
         $validated = $request->validate([
             'equation_name' => ['required', 'string', 'max:255', 'unique:saved_equations,equation_name'],
             'formula' => ['required', 'string'],
+            'location' => ['nullable', 'string', 'max:255'],
+            'notes' => ['nullable', 'string', 'max:1000'],
         ], [
             'equation_name.required' => 'Please enter an equation name.',
             'equation_name.unique' => 'An equation with this name already exists. Choose a unique name.',
         ]);
 
         $equation = SavedEquation::create([
+            'user_id' => auth()->id(),
             'equation_name' => $validated['equation_name'],
             'formula' => $validated['formula'],
+            'location' => $validated['location'] ?? null,
+            'notes' => $validated['notes'] ?? null,
         ]);
 
         return response()->json([
@@ -86,6 +91,8 @@ class SavedEquationController extends Controller
         $validated = $request->validate([
             'equation_name' => ['required', 'string', 'max:255', 'unique:saved_equations,equation_name,' . $saved_equation->id],
             'formula' => ['required', 'string'],
+            'location' => ['nullable', 'string', 'max:255'],
+            'notes' => ['nullable', 'string', 'max:1000'],
         ], [
             'equation_name.required' => 'Please enter an equation name.',
             'equation_name.unique' => 'An equation with this name already exists. Choose a unique name.',
@@ -94,6 +101,8 @@ class SavedEquationController extends Controller
         $saved_equation->update([
             'equation_name' => $validated['equation_name'],
             'formula' => $validated['formula'],
+            'location' => $validated['location'] ?? null,
+            'notes' => $validated['notes'] ?? null,
         ]);
 
         return response()->json([

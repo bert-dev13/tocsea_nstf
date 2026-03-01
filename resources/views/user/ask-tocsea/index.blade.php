@@ -63,9 +63,9 @@
 @endsection
 
 @push('styles')
-    @vite(['resources/css/ask-tocsea.css'])
+    @vite(['resources/views/user/css/ask-tocsea.css'])
 @endpush
 
 @push('scripts')
-    @vite(['resources/js/ask-tocsea.js'])
+    @vite(['resources/views/user/js/ask-tocsea.js'])
 @endpush

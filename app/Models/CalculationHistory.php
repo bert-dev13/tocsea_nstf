@@ -40,4 +40,36 @@ class CalculationHistory extends Model
     {
         return $query->where('user_id', $user->id);
     }
+
+    /**
+     * Derive risk level from result (m²/year): Low < 10, Moderate < 50, High >= 50.
+     */
+    public function getRiskLevelAttribute(): string
+    {
+        $result = $this->result === null ? null : (float) $this->result;
+        if ($result === null) {
+            return '—';
+        }
+        if ($result < 10) {
+            return 'Low';
+        }
+        if ($result < 50) {
+            return 'Moderate';
+        }
+        return 'High';
+    }
+
+    /**
+     * Location string from the calculation's user (province, municipality, barangay).
+     */
+    public function getLocationDisplayAttribute(): string
+    {
+        $user = $this->user;
+        if (! $user) {
+            return '—';
+        }
+        $parts = array_filter([$user->barangay, $user->municipality, $user->province]);
+
+        return $parts ? implode(', ', $parts) : '—';
+    }
 }

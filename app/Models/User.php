@@ -17,6 +17,11 @@ class User extends Authenticatable
      *
      * @var list<string>
      */
+    public const ROLE_ADMIN = 'admin';
+    public const ROLE_USER = 'user';
+    public const STATUS_ACTIVE = 'active';
+    public const STATUS_INACTIVE = 'inactive';
+
     protected $fillable = [
         'name',
         'email',
@@ -25,6 +30,10 @@ class User extends Authenticatable
         'municipality',
         'barangay',
         'last_login_at',
+        'is_admin',
+        'role',
+        'is_disabled',
+        'status',
     ];
 
     /**
@@ -48,7 +57,57 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'last_login_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
+            'is_disabled' => 'boolean',
         ];
+    }
+
+    /**
+     * Check if the user has full admin privileges.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === self::ROLE_ADMIN || (bool) $this->is_admin;
+    }
+
+    /**
+     * Check if the user account is active.
+     */
+    public function isActive(): bool
+    {
+        return !$this->is_disabled;
+    }
+
+    /**
+     * Get status attribute (active/inactive) from is_disabled.
+     */
+    public function getStatusAttribute(): string
+    {
+        return (bool) ($this->attributes['is_disabled'] ?? false) ? self::STATUS_INACTIVE : self::STATUS_ACTIVE;
+    }
+
+    /**
+     * Set status attribute (updates is_disabled).
+     */
+    public function setStatusAttribute(string $value): void
+    {
+        $this->attributes['is_disabled'] = $value === self::STATUS_INACTIVE;
+    }
+
+    /**
+     * Get human-readable role label.
+     */
+    public function getRoleLabelAttribute(): string
+    {
+        return $this->role === self::ROLE_ADMIN ? 'Admin' : 'User';
+    }
+
+    /**
+     * Get human-readable status label.
+     */
+    public function getStatusLabelAttribute(): string
+    {
+        return $this->status === self::STATUS_ACTIVE ? 'Active' : 'Inactive';
     }
 
     public function soilLossRecords()

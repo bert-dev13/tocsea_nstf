@@ -1,0 +1,141 @@
+/* ==========================================================================
+   TOCSEA Admin - Settings page (simple, like user side)
+   ========================================================================== */
+
+.admin-settings-page .admin-header-card {
+    background: linear-gradient(135deg, var(--color-ocean-blue), var(--color-deep-blue));
+}
+
+.admin-settings-section {
+    margin-bottom: var(--space-xl);
+}
+
+.admin-settings-card {
+    background: var(--color-white);
+    border-radius: 12px;
+    border: 1px solid var(--color-gray-200);
+    box-shadow: 0 2px 8px rgba(10, 37, 64, 0.04);
+    padding: var(--space-xl);
+}
+
+.admin-settings-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
+.admin-settings-form-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.admin-settings-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-gray-700);
+}
+
+.admin-settings-required {
+    color: #dc2626;
+}
+
+.admin-settings-input {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 0.9375rem;
+    font-family: inherit;
+    color: var(--color-gray-900);
+    background: var(--color-white);
+    border: 1px solid var(--color-gray-200);
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+.admin-settings-input:focus {
+    outline: none;
+    border-color: var(--color-teal);
+    box-shadow: 0 0 0 3px var(--color-teal-muted);
+}
+
+.admin-settings-input.is-error {
+    border-color: #b91c1c;
+}
+
+.admin-settings-readonly {
+    padding: 10px 12px;
+    font-size: 0.9375rem;
+    color: var(--color-gray-600);
+    background: var(--color-gray-100);
+    border-radius: 8px;
+}
+
+.admin-settings-hint {
+    font-size: 0.8125rem;
+    color: var(--color-gray-500);
+}
+
+.admin-settings-error {
+    font-size: 0.8125rem;
+    color: #dc2626;
+}
+
+.admin-settings-form-actions {
+    padding-top: var(--space-sm);
+}
+
+.admin-settings-btn {
+    padding: var(--space-md) var(--space-lg);
+    border-radius: 8px;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.admin-settings-btn-primary {
+    background: var(--color-teal);
+    color: var(--color-white);
+}
+
+.admin-settings-btn-primary:hover:not(:disabled) {
+    background: var(--color-teal-dark, #0d7377);
+}
+
+.admin-settings-btn-primary:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Toast */
+.admin-settings-toast {
+    position: fixed;
+    top: var(--space-lg);
+    left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    opacity: 0;
+    z-index: 1001;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-md) var(--space-lg);
+    background: var(--color-teal-muted);
+    color: var(--color-teal);
+    border: 1px solid rgba(14, 107, 107, 0.3);
+    border-radius: 8px;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+.admin-settings-toast.is-visible {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+.admin-settings-toast .lucide-icon {
+    flex-shrink: 0;
+}

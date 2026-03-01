@@ -23,7 +23,7 @@ class AskTocseaController extends Controller
     {
         $calculationContext = session()->pull('ask_tocsea_calculation_context');
 
-        return view('ask-tocsea.index', [
+        return view('user.ask-tocsea.index', [
             'askUrl' => url('/api/ask-tocsea'),
             'calculationContext' => $calculationContext,
         ]);

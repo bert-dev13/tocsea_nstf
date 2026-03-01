@@ -1,0 +1,211 @@
+# TOCSEA User Side — System Overview
+
+**TOCSEA** (Topographical Changes from Coastal Soil Erosion) is a web application for coastal soil loss monitoring, risk assessment, and environmental decision support. This document describes the **user-facing system** — features, workflow, and how the modules connect.
+
+---
+
+## What TOCSEA Does
+
+TOCSEA supports researchers and coastal managers to:
+
+- **Monitor** environmental conditions (weather, location)
+- **Predict** soil loss using validated and custom models
+- **Customize** regression equations for specific study areas
+- **Review** past calculations and track results over time
+- **Get guidance** via an AI assistant (Ask TOCSEA) for interpretation and recommendations
+
+---
+
+## User Journey
+
+### 1. Landing Page
+
+- Public landing page at `/`
+- Describes TOCSEA’s purpose and integrated workflow
+- **Login** and **Register** links
+- Logged-in users are redirected to the Dashboard
+
+### 2. Authentication
+
+| Route       | Purpose                          |
+|------------|-----------------------------------|
+| `/login`   | User login                        |
+| `/register`| New user registration             |
+| `/logout`  | Log out                           |
+| `/forgot-password` | Password reset via email   |
+
+### 3. User Dashboard
+
+- **Route:** `/dashboard`
+- Central hub after login
+
+**Dashboard sections:**
+
+- **Header** — Greeting, location (barangay → municipality → province), last login
+- **Weather & Environment** — Today’s weather and 5-day forecast (location-based)
+- **Summary Overview:**
+  - Total calculations this month
+  - Saved models count
+  - Latest soil loss result (m²/year)
+  - Current risk level (Low / Moderate / High)
+- **Recent Activity** — Last 5 calculations with results and quick links
+- **Quick Actions** — Links to Soil Calculator, Model Builder, Calculation History, Ask TOCSEA
+
+### 4. Main Tools (Top Navigation)
+
+Navigation bar on all authenticated pages:
+
+| Tool                  | Route                         | Purpose                                                                 |
+|-----------------------|-------------------------------|-------------------------------------------------------------------------|
+| **Dashboard**         | `/dashboard`                  | Overview and quick access                                              |
+| **Soil Calculator**   | `/soil-calculator`           | Predict annual soil loss from coastal parameters                        |
+| **Model Builder**     | `/model-builder`             | Build custom regression equations from your data                         |
+| **Calculation History** | `/calculation-history`     | List, filter, export, rerun past calculations                           |
+| **Ask TOCSEA**        | `/ask-tocsea`                | AI chat for interpretation and recommendations                          |
+
+---
+
+## Detailed Module Descriptions
+
+### Soil Calculator
+
+- **Route:** `/soil-calculator`
+- Predicts annual soil loss (m²/year) from coastal factors.
+
+**Inputs (default Buguey model):**
+
+- Seawall length (m)
+- Precipitation (mm)
+- Tropical storm events
+- Flood events
+- Soil type (sandy, clay, loamy, silty, peaty, chalky)
+
+**Behavior:**
+
+- Option to use a **Saved Equation** from Model Builder instead of the default
+- Calculates soil loss and risk level (Low / Moderate / High)
+- **Tree Recommendations** — AI suggestions for vegetation based on soil type, predicted loss, and risk
+- **Ask TOCSEA** — One-click flow to send current calculation context to Ask TOCSEA for interpretation
+- Results are stored in **Calculation History**
+
+### Model Builder
+
+- **Route:** `/model-builder`
+- **Saved Equations:** `/model-builder/saved-equations`
+
+Builds custom multiple linear regression models for coastal soil loss.
+
+**Predictor variables include:**
+
+- Tropical storms, depressions, typhoons, super typhoons
+- Floods, storm surges
+- Precipitation (mm)
+- Seawall length (m)
+- Vegetation area, coastal elevation, remaining land area
+
+**Flow:**
+
+1. Upload or paste tabular data with predictor columns and target `Soil_loss_sqm`
+2. Run regression → coefficients and formula
+3. Save equation (name, formula) for use in Soil Calculator
+4. Saved equations appear in Soil Calculator dropdown and in Saved Equations
+
+### Calculation History
+
+- **Route:** `/calculation-history`
+
+Stores all past runs from Soil Calculator.
+
+**Capabilities:**
+
+- **Search** — By equation name or formula
+- **Filters** — Date range, equation (default or saved)
+- **Sort** — Newest or oldest first
+- **View detail** — Inputs, result, notes for each run
+- **Rerun** — Re-open in Soil Calculator with same inputs
+- **Export** — Download to XLSX
+- **Delete** — Remove individual records
+
+### Ask TOCSEA
+
+- **Route:** `/ask-tocsea`
+- AI chat for soil erosion, coastal hazards, model outputs, and environmental risk.
+
+**Features:**
+
+- Question/answer chat with Together AI
+- **Context from Soil Calculator** — When opened from a calculation, current inputs, result, and risk level are sent for contextual answers
+- Suggested questions
+- Copy summary button for report-ready text
+- Clear chat
+- Rate limited (10 requests/minute)
+
+### Settings
+
+- **Route:** `/settings`
+- **User menu** — Via top-right profile icon
+
+**Options:**
+
+- **Personal Information** — Update name, email
+- **Change Password** — Current password + new password
+- **Account Created** — Display-only date
+
+---
+
+## Data Flow
+
+```
+Landing → Login/Register → Dashboard
+                              ↓
+         ┌────────────────────┼────────────────────┐
+         ↓                    ↓                    ↓
+  Soil Calculator     Model Builder       Calculation History
+         │                    │                    │
+         │  uses saved        │  saves             │  stores
+         │  equations ←───────┘  equations         │  results
+         │                                           │
+         └──────────────┬────────────────────────────┘
+                        ↓
+                   Ask TOCSEA
+              (optional context from calculation)
+```
+
+---
+
+## User Profile
+
+User profile includes:
+
+- **Name** — Displayed in header and dashboard
+- **Email** — Login identity
+- **Location** — Province, municipality, barangay (used for weather and display)
+- **Last login** — Shown on dashboard
+
+---
+
+## Platform Workflow Summary
+
+1. **Monitor** — Start at Dashboard for overview and weather.
+2. **Predict** — Use Soil Calculator (default or saved equations) to predict soil loss.
+3. **Customize** — Use Model Builder to create or adjust regression models.
+4. **Analyze** — Interpret outputs from calculations and models.
+5. **Review** — Use Calculation History to view, filter, export, and rerun past runs.
+6. **Get Guidance** — Use Ask TOCSEA for interpretation and recommendations.
+
+---
+
+## Technical Notes (User Side)
+
+- **Framework:** Laravel (PHP)
+- **Frontend:** Blade views, Vite, Lucide icons
+- **Auth:** Session-based; admin users get an Admin link in the user menu
+- **API endpoints (user-relevant):**
+  - `POST /api/ask-tocsea` — Ask TOCSEA chat
+  - `POST /api/tree-recommendations` — Tree suggestions from Soil Calculator
+  - `GET /api/weather` — Weather data
+  - `POST /api/calculation-history` — Store new calculation
+
+---
+
+*Last updated: February 2026*

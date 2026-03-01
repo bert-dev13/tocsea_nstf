@@ -286,11 +286,11 @@
 </div>
 
 @push('styles')
-    @vite(['resources/css/model-builder.css'])
-    @vite(['resources/css/saved-equations.css'])
+    @vite(['resources/views/user/css/model-builder.css'])
+    @vite(['resources/views/user/css/saved-equations.css'])
 @endpush
 
 @push('scripts')
-    @vite(['resources/js/model-builder.js'])
+    @vite(['resources/views/user/js/model-builder.js'])
 @endpush
 @endsection

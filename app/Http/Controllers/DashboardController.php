@@ -31,7 +31,7 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        return view('dashboard', [
+        return view('user.dashboard.index', [
             'user' => $user,
             'location' => [
                 'province' => $user->province ?? '—',

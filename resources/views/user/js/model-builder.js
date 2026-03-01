@@ -340,7 +340,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (generatedModelContent) generatedModelContent.hidden = hasPValues && !hasSignificant;
         if (noSignificantPredictors) noSignificantPredictors.hidden = !hasPValues || hasSignificant;
 
-        renderEquation(hasSignificant ? equationStr : null);
+        /* Always persist the equation (including intercept-only) so Save Equation works after any regression run */
+        renderEquation(equationStr);
 
         if (significantPredictorsList) {
             significantPredictorsList.innerHTML = '';
@@ -639,7 +640,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function openSaveEquationModal() {
-        const raw = regressionEquationFormatted?.dataset?.rawEquation?.trim();
+        let raw = regressionEquationFormatted?.dataset?.rawEquation?.trim();
+        if (!raw && lastRegression) {
+            const pThreshold = getPThreshold();
+            raw = buildDynamicEquation(lastRegression, pThreshold) || '';
+            if (raw && regressionEquationFormatted) regressionEquationFormatted.dataset.rawEquation = raw;
+        }
         if (!raw) {
             alert('Run a regression first to generate an equation, then click Save Equation.');
             return;

@@ -1,5 +1,11 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminAnalyticsController;
+use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminSettingsController;
+use App\Http\Controllers\Admin\CalculationController;
+use App\Http\Controllers\Admin\ModelManagementController;
+use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\AskTocseaController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CalculationHistoryController;
@@ -13,7 +19,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     if (auth()->check()) {
-        return redirect()->route('dashboard');
+        return auth()->user()->isAdmin()
+            ? redirect()->route('admin.dashboard')
+            : redirect()->route('dashboard');
     }
     return view('landing');
 });
@@ -63,6 +71,37 @@ Route::middleware('auth')->group(function () {
     Route::post('/api/tree-recommendations', [SoilCalculatorController::class, 'generateTreeRecommendations'])
         ->middleware('throttle:10,1')
         ->name('tree-recommendations.generate');
+});
+
+// Admin API routes (JSON responses for paginated list data)
+Route::middleware(['auth', 'admin'])->prefix('api/admin')->group(function () {
+    Route::get('/users', [UserManagementController::class, 'apiIndex'])->name('api.admin.users');
+    Route::get('/calculations', [CalculationController::class, 'apiIndex'])->name('api.admin.calculations');
+    Route::get('/models', [ModelManagementController::class, 'apiIndex'])->name('api.admin.models');
+});
+
+// Admin routes (requires admin privileges)
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/users', [UserManagementController::class, 'index'])->name('users.index');
+    Route::get('/users/export/excel', [UserManagementController::class, 'exportExcel'])->name('users.export-excel');
+    Route::post('/users', [UserManagementController::class, 'store'])->name('users.store');
+    Route::get('/users/{user}', [UserManagementController::class, 'show'])->name('users.show');
+    Route::put('/users/{user}', [UserManagementController::class, 'update'])->name('users.update');
+    Route::delete('/users/{user}', [UserManagementController::class, 'destroy'])->name('users.destroy');
+    Route::get('/settings', [AdminSettingsController::class, 'index'])->name('settings.index');
+    Route::put('/settings/profile', [AdminSettingsController::class, 'updateProfile'])->name('settings.profile.update');
+    Route::put('/settings/password', [AdminSettingsController::class, 'changePassword'])->name('settings.password.update');
+    Route::get('/models', [ModelManagementController::class, 'index'])->name('models.index');
+    Route::get('/models/export/excel', [ModelManagementController::class, 'exportExcel'])->name('models.export-excel');
+    Route::get('/models/{saved_equation}', [ModelManagementController::class, 'show'])->name('models.show');
+    Route::delete('/models/{saved_equation}', [ModelManagementController::class, 'destroy'])->name('models.destroy');
+    Route::get('/analytics', [AdminAnalyticsController::class, 'index'])->name('analytics.index');
+    Route::get('/calculations', [CalculationController::class, 'index'])->name('calculations.index');
+    Route::get('/calculations/export/excel', [CalculationController::class, 'exportExcel'])->name('calculations.export-excel');
+    Route::get('/calculations/{calculation_history}/pdf', [CalculationController::class, 'exportPdf'])->name('calculations.export-pdf');
+    Route::get('/calculations/{calculation_history}', [CalculationController::class, 'show'])->name('calculations.show');
+    Route::delete('/calculations/{calculation_history}', [CalculationController::class, 'destroy'])->name('calculations.destroy');
 });
 Route::get('/forgot-password', [AuthController::class, 'showForgotPasswordForm'])->name('password.request');
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->name('password.email');

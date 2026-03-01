@@ -17,7 +17,7 @@ class SoilCalculatorController extends Controller
     {
         $rerunData = $request->session()->get('calculation_history_rerun');
 
-        return view('soil-calculator', [
+        return view('user.soil-calculator.index', [
             'rerunData' => $rerunData,
         ]);
     }

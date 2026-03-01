@@ -34,7 +34,7 @@ class ModelBuilderController extends Controller
 
     public function index(): \Illuminate\View\View
     {
-        return view('model-builder');
+        return view('user.model-builder.index');
     }
 
     /**
@@ -42,7 +42,7 @@ class ModelBuilderController extends Controller
      */
     public function savedEquations(): \Illuminate\View\View
     {
-        return view('model-builder-saved-equations');
+        return view('user.model-builder-saved-equations.index');
     }
 
     /**
