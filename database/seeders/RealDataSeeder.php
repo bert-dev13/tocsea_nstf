@@ -146,11 +146,18 @@ class RealDataSeeder extends Seeder
             );
         }
 
-        // 40 calculation histories: realistic inputs and results, spread across users
+        // 40 calculation histories: realistic inputs and results; each user only references their own equations
         $soilTypes = ['Clay', 'Loam', 'Sandy', 'Silty', 'Clay Loam'];
+        $equationsByUser = [];
+        foreach ($equations as $eq) {
+            $equationsByUser[$eq->user_id][] = $eq;
+        }
+        $historyIdx = 0;
         for ($i = 0; $i < 40; $i++) {
             $user = $users[$i % count($users)];
-            $eq = $equations[$i % count($equations)];
+            $userEquations = $equationsByUser[$user->id] ?? [];
+            $eq = ! empty($userEquations) ? $userEquations[$historyIdx % count($userEquations)] : null;
+            $historyIdx++;
             $result = (float) rand(1, 120) / 10; // 0.1 to 12.0, some higher for variety
             if ($i % 5 === 0) {
                 $result = (float) rand(50, 180) / 10; // 5 to 18 for moderate/high
@@ -158,9 +165,9 @@ class RealDataSeeder extends Seeder
 
             CalculationHistory::create([
                 'user_id' => $user->id,
-                'saved_equation_id' => $eq->id,
-                'equation_name' => $eq->equation_name,
-                'formula_snapshot' => $eq->formula,
+                'saved_equation_id' => $eq?->id,
+                'equation_name' => $eq ? $eq->equation_name : 'Default (Buguey)',
+                'formula_snapshot' => $eq ? $eq->formula : 'y = 2.1 + 0.05*R_factor',
                 'inputs' => [
                     'precipitation' => round(rand(1800, 3200) / 10, 1),
                     'slope' => round(rand(2, 25), 1),

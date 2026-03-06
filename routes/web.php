@@ -53,6 +53,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/calculation-history', [CalculationHistoryController::class, 'index'])->name('calculation-history.index');
     Route::get('/calculation-history/export', [CalculationHistoryController::class, 'export'])->name('calculation-history.export');
+    Route::get('/calculation-history/export/pdf', [CalculationHistoryController::class, 'exportPdf'])->name('calculation-history.export-pdf');
     Route::get('/calculation-history/{calculation_history}', [CalculationHistoryController::class, 'show'])->name('calculation-history.show');
     Route::post('/api/calculation-history', [CalculationHistoryController::class, 'store'])->name('calculation-history.store');
     Route::delete('/calculation-history/{calculation_history}', [CalculationHistoryController::class, 'destroy'])->name('calculation-history.destroy');

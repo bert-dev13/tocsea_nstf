@@ -570,7 +570,7 @@ createIcons({ icons: { History, Calculator, RotateCcw, Trash2, Inbox, Eye, Check
 const exportUrl = page?.dataset?.exportUrl || (historyBaseUrl ? historyBaseUrl + '/export' : '');
 const chExportBtn = document.getElementById('chExportBtn');
 const chExportMenu = document.getElementById('chExportMenu');
-const chExportWrap = document.querySelector('.ch-export-wrap');
+const chExportWrap = document.querySelector('.mb-se-export-wrap');
 const chTableWrap = document.getElementById('chTableWrap');
 const chTable = document.getElementById('chTable');
 
@@ -611,17 +611,50 @@ function getChExportParams(scope) {
     return obj;
 }
 
-async function chRunExport(format, scope) {
-    const params = getChExportParams(scope);
-    const url = buildExportQuery(exportUrl, params, scope);
+/** Export scope: match Saved Equation — export current view only (current page). */
+const CH_EXPORT_SCOPE = 'page';
+
+/** Base URL for server-rendered PDF (same filters as JSON export). */
+function getChPdfExportUrl() {
+    const base = (exportUrl || '').replace(/\/export\/?$/, '');
+    return base ? base + '/export/pdf' : '';
+}
+
+async function chRunExport(format) {
+    if (format === 'pdf') {
+        const pdfUrl = getChPdfExportUrl();
+        if (!pdfUrl) { showToast('Export URL not configured.'); return; }
+        const params = getChExportParams(CH_EXPORT_SCOPE);
+        params.scope = CH_EXPORT_SCOPE;
+        const qs = new URLSearchParams(params).toString();
+        const url = qs ? pdfUrl + '?' + qs : pdfUrl;
+        setChExportLoading(true);
+        try {
+            const res = await fetch(url, { method: 'GET', credentials: 'same-origin' });
+            if (!res.ok) throw new Error(res.statusText);
+            const blob = await res.blob();
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'Calculation_History_Report.pdf';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        } catch (e) {
+            console.error('PDF export failed:', e);
+            showToast('PDF export failed. Please try again.');
+        } finally {
+            setChExportLoading(false);
+            updateChExportButtonState();
+        }
+        return;
+    }
+
+    const params = getChExportParams(CH_EXPORT_SCOPE);
+    const url = buildExportQuery(exportUrl, params, CH_EXPORT_SCOPE);
     if (!url) { showToast('Export URL not configured.'); return; }
     setChExportLoading(true);
     try {
         const rows = await fetchExportRows(url);
-        if (rows.length === 0) {
-            showToast('No data to export.');
-            return;
-        }
+        if (rows.length === 0) return;
         const getCellValues = (r) => [r.date_time, r.equation_name, r.inputs, r.result_formatted];
         const datePart = new Date().toISOString().slice(0, 10);
         const opts = {
@@ -629,15 +662,12 @@ async function chRunExport(format, scope) {
             columns: CH_EXPORT_COLUMNS,
             getCellValues,
         };
-        if (format === 'pdf') {
-            const ok = await exportPdf(rows, { ...opts, filename: 'Calculation_History_Report.pdf' });
-            if (!ok) showToast('PDF export failed. Please try again.');
-        } else if (format === 'excel') {
+        if (format === 'excel') {
             const ok = await exportExcel(rows, {
                 columns: CH_EXPORT_COLUMNS,
                 getCellValues: (r) => [r.date_time, r.equation_name, r.inputs, r.result],
                 sheetName: 'Calculation History',
-                filename: 'calculation-history_' + datePart + '.xlsx',
+                filename: 'tocsea-calculation-history-' + datePart + '.xlsx',
             });
             if (!ok) showToast('Export failed. Please try again.');
         } else if (format === 'print') {
@@ -665,16 +695,15 @@ if (chExportBtn && chExportMenu) {
     chExportMenu.querySelectorAll('.mb-se-export-item').forEach((item) => {
         item.addEventListener('click', () => {
             const format = item.getAttribute('data-export');
-            const scope = item.getAttribute('data-scope') || 'all';
             chExportMenu.hidden = true;
             chExportWrap?.classList.remove('is-open');
             chExportBtn?.setAttribute('aria-expanded', 'false');
-            chRunExport(format, scope);
+            chRunExport(format);
         });
     });
 }
 document.addEventListener('click', (e) => {
-    if (chExportMenu && !chExportMenu.hidden && !e.target.closest('.ch-export-wrap')) {
+    if (chExportMenu && !chExportMenu.hidden && !e.target.closest('.mb-se-export-wrap')) {
         chExportMenu.hidden = true;
         chExportWrap?.classList.remove('is-open');
         if (chExportBtn) chExportBtn.setAttribute('aria-expanded', 'false');

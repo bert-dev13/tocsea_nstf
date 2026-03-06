@@ -18,4 +18,12 @@ class SavedEquation extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    /**
+     * Scope to records belonging to the given user (ensures per-user data isolation).
+     */
+    public function scopeForUser($query, $user)
+    {
+        return $query->where('user_id', $user->id);
+    }
 }

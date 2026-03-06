@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreCalculationHistoryRequest;
 use App\Models\CalculationHistory;
 use App\Models\SavedEquation;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -61,7 +62,8 @@ class CalculationHistoryController extends Controller
 
         $items = $this->filteredQuery($request)->paginate(self::PER_PAGE)->withQueryString();
 
-        $equationOptions = ['' => 'All equations', '__default__' => 'Default (Buguey)'] + SavedEquation::orderBy('equation_name')
+        $equationOptions = ['' => 'All equations', '__default__' => 'Default (Buguey)'] + SavedEquation::forUser($request->user())
+            ->orderBy('equation_name')
             ->get(['id', 'equation_name'])
             ->mapWithKeys(fn ($eq) => [$eq->id => $eq->equation_name])
             ->all();
@@ -137,7 +139,7 @@ class CalculationHistoryController extends Controller
     {
         $this->authorize('viewAny', CalculationHistory::class);
 
-        $scope = $request->get('scope', 'all');
+        $scope = $request->get('scope', 'page');
         $query = $this->filteredQuery($request);
 
         if ($scope === 'page') {
@@ -163,6 +165,47 @@ class CalculationHistoryController extends Controller
         });
 
         return response()->json(['rows' => $rows]);
+    }
+
+    /**
+     * Export calculation history as PDF (dedicated layout, fixed column widths).
+     * Uses same filters as export(); scope=page for current page only.
+     */
+    public function exportPdf(Request $request)
+    {
+        $this->authorize('viewAny', CalculationHistory::class);
+
+        $scope = $request->get('scope', 'page');
+        $query = $this->filteredQuery($request);
+
+        if ($scope === 'page') {
+            $page = max(1, (int) $request->get('page', 1));
+            $perPage = min(100, max(1, (int) $request->get('per_page', self::PER_PAGE)));
+            $items = $query->forPage($page, $perPage)->get();
+        } else {
+            $items = $query->get();
+        }
+
+        $rows = $items->map(function ($h) {
+            $inputCount = is_array($h->inputs) ? count($h->inputs) : 0;
+            $inputsLabel = $inputCount . ' variable' . ($inputCount !== 1 ? 's' : '');
+
+            return [
+                'date_time' => $h->created_at->format('M j, Y g:i A'),
+                'equation_name' => $h->equation_name,
+                'inputs' => $inputsLabel,
+                'result_formatted' => number_format((float) $h->result, 2) . ' m²/year',
+            ];
+        });
+
+        $dateGenerated = now()->format('M j, Y g:i A');
+
+        return Pdf::loadView('reports.calculation-history-pdf', [
+            'rows' => $rows,
+            'dateGenerated' => $dateGenerated,
+        ])
+            ->setPaper('a4', 'portrait')
+            ->download('Calculation_History_Report.pdf');
     }
 
     /**

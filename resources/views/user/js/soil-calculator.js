@@ -828,6 +828,8 @@ document.addEventListener('DOMContentLoaded', () => {
             soilLoss = model.formula(seawall, precipitation, tropicalStorm, floods);
         }
         soilLoss = Number.isNaN(soilLoss) ? 0 : soilLoss;
+        const resultWasCapped = soilLoss < 0;
+        if (resultWasCapped) soilLoss = 0;
         const risk = getRiskLevel(soilLoss);
         const impactInfo = IMPACT_PRIORITY[risk.level] || IMPACT_PRIORITY.moderate;
         const gaugePos = getGaugePosition(risk.level);
@@ -843,15 +845,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const factors = getContributingFactors(typhoonsForFactors, floodsForFactors, seawallForFactors, validated.soilType);
 
         const modelName = validated.model?.name || (PREDICTION_MODELS[DEFAULT_MODEL_ID] && !validated.useSaved ? PREDICTION_MODELS[DEFAULT_MODEL_ID].name : 'Model');
-        const isNegative = soilLoss < 0;
         if (resultValue) {
             resultValue.textContent = Number.isNaN(soilLoss) ? '—' : parseFloat(Number(soilLoss).toFixed(2)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
         const resultValueBlock = document.querySelector('.soil-result-value-block');
         const resultNegativeNote = document.getElementById('resultNegativeNote');
-        if (resultValueBlock) resultValueBlock.dataset.negative = isNegative ? 'true' : 'false';
+        if (resultValueBlock) resultValueBlock.dataset.negative = resultWasCapped ? 'true' : 'false';
         if (resultNegativeNote) {
-            if (isNegative) resultNegativeNote.removeAttribute('hidden');
+            if (resultWasCapped) resultNegativeNote.removeAttribute('hidden');
             else resultNegativeNote.setAttribute('hidden', '');
         }
         if (resultUnit) resultUnit.textContent = 'm²/year';

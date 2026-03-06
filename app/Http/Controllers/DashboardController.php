@@ -17,7 +17,7 @@ class DashboardController extends Controller
             ->whereYear('created_at', now()->year)
             ->count();
 
-        $savedModelsCount = SavedEquation::count();
+        $savedModelsCount = SavedEquation::forUser($user)->count();
 
         $latestCalc = CalculationHistory::forUser($user)
             ->orderByDesc('created_at')

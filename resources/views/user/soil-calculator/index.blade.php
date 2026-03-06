@@ -133,7 +133,7 @@
                         </div>
                         <p class="soil-result-negative-note" id="resultNegativeNote" hidden role="note">
                             <i data-lucide="info" class="lucide-icon lucide-icon-xs" aria-hidden="true"></i>
-                            Negative value indicates possible soil gain, deposition, or model imbalance. Please review input values.
+                            Result was below 0, so it was capped at 0 because soil loss cannot be negative.
                         </p>
                         <span class="soil-calculator-risk-badge" id="resultRiskBadge">—</span>
                     </div>

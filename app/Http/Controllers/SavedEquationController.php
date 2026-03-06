@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\SavedEquation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class SavedEquationController extends Controller
 {
@@ -12,11 +13,14 @@ class SavedEquationController extends Controller
 
     /**
      * List saved equations with pagination (for Saved Equations section only).
-     * Does not mix with regression logic.
+     * Does not mix with regression logic. Only the current user's equations are returned.
      */
     public function index(Request $request): JsonResponse
     {
-        $paginator = SavedEquation::orderBy('updated_at', 'desc')
+        $this->authorize('viewAny', SavedEquation::class);
+
+        $paginator = SavedEquation::forUser($request->user())
+            ->orderBy('updated_at', 'desc')
             ->paginate(self::PER_PAGE, [
                 'id',
                 'equation_name',
@@ -53,7 +57,12 @@ class SavedEquationController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'equation_name' => ['required', 'string', 'max:255', 'unique:saved_equations,equation_name'],
+            'equation_name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('saved_equations', 'equation_name')->where('user_id', $request->user()->id),
+            ],
             'formula' => ['required', 'string'],
             'location' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:1000'],
@@ -88,8 +97,15 @@ class SavedEquationController extends Controller
      */
     public function update(Request $request, SavedEquation $saved_equation): JsonResponse
     {
+        $this->authorize('update', $saved_equation);
+
         $validated = $request->validate([
-            'equation_name' => ['required', 'string', 'max:255', 'unique:saved_equations,equation_name,' . $saved_equation->id],
+            'equation_name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('saved_equations', 'equation_name')->where('user_id', $request->user()->id)->ignore($saved_equation->id),
+            ],
             'formula' => ['required', 'string'],
             'location' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:1000'],
@@ -123,6 +139,8 @@ class SavedEquationController extends Controller
      */
     public function destroy(SavedEquation $saved_equation): JsonResponse
     {
+        $this->authorize('delete', $saved_equation);
+
         $saved_equation->delete();
 
         return response()->json([
