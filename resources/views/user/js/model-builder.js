@@ -16,9 +16,11 @@ import {
     RefreshCw,
     Check,
     CheckCircle,
+    Plus,
+    Minus,
 } from 'lucide';
 
-const MB_ICONS = { Box, Bookmark, Download, Eraser, Play, BarChart2, Copy, Save, RefreshCw, Check, CheckCircle };
+const MB_ICONS = { Box, Bookmark, Download, Eraser, Play, BarChart2, Copy, Save, RefreshCw, Check, CheckCircle, Plus, Minus };
 
 const MB_SAVE_SUCCESS_FLAG = 'mbEquationSavedSuccess';
 
@@ -111,119 +113,70 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnRunNew = document.getElementById('btnRunNew');
 
     const COLUMNS = [
-        'Year', 'Tropical_Depression', 'Tropical_Storms', 'Severe_Tropical_Storms', 'Typhoons', 'Super_Typhoons',
-        'Floods', 'Storm_Surges', 'Precipitation_mm', 'Seawall_m', 'Vegetation_area_sqm',
-        'Coastal_Elevation', 'Soil_loss_sqm'
+        'Year', 'Trop_Depressions', 'Trop_Storms', 'Sev_Trop_Storms', 'Typhoons', 'Super_Typhoons',
+        'Floods', 'Storm_Surges', 'Precipitation_mm', 'Seawall_m', 'Veg_Area_Sqm',
+        'Coastal_Elevation', 'Soil_Loss_Sqm'
     ];
 
-    /** Predictor columns (all except Year and Soil_loss_sqm) — required for a row to be "complete". */
-    const PREDICTOR_COLUMNS = COLUMNS.filter((c) => c !== 'Year' && c !== 'Soil_loss_sqm');
+    /** Predictor columns (all except Year and Soil_Loss_Sqm) for row completeness. */
+    const PREDICTOR_COLUMNS = COLUMNS.filter((c) => c !== 'Year' && c !== 'Soil_Loss_Sqm');
 
-    /** Full predictor list in display order for All Coefficients table (11 predictors). Always show all; missing ones display as "Not estimated (dropped)". */
+    /** Full predictor list for Coefficients table (all candidate predictors in order). */
     const FULL_PREDICTOR_LIST = [
-        'Tropical_Depression',
-        'Tropical_Storms',
-        'Severe_Tropical_Storms',
-        'Typhoons',
-        'Super_Typhoons',
-        'Floods',
-        'Storm_Surges',
-        'Precipitation_mm',
-        'Seawall_m',
-        'Vegetation_area_sqm',
-        'Coastal_Elevation',
+        'Trop_Depressions', 'Trop_Storms', 'Sev_Trop_Storms', 'Typhoons', 'Super_Typhoons',
+        'Floods', 'Storm_Surges', 'Precipitation_mm', 'Seawall_m', 'Veg_Area_Sqm', 'Coastal_Elevation',
     ];
 
     /** Minimum number of rows with valid Soil_Loss_Sqm and complete predictor data to run regression. */
     const MIN_VALID_ROWS = 5;
 
-    /** Default dataset (2015–2024) shown when user opens the Model Builder page. */
+    function getSelectedPredictors() {
+        const checkboxes = document.querySelectorAll('.mb-checkbox[data-predictor]');
+        const selected = [];
+        checkboxes.forEach((cb) => {
+            if (cb.checked) selected.push(cb.dataset.predictor);
+        });
+        return selected.length ? selected : PREDICTOR_COLUMNS;
+    }
+
+    function getRegressionMethod() {
+        const sel = document.getElementById('regressionMethodSelect');
+        return (sel && sel.value === 'enter') ? 'enter' : 'stepwise';
+    }
+
+    function getEntryP() {
+        const el = document.getElementById('entryPInput');
+        if (!el) return 0.05;
+        const v = parseFloat(el.value, 10);
+        return (isNaN(v) || v < 0.01 || v > 0.5) ? 0.05 : v;
+    }
+
+    function getRemovalP() {
+        const el = document.getElementById('removalPInput');
+        if (!el) return 0.10;
+        const v = parseFloat(el.value, 10);
+        return (isNaN(v) || v < 0.05 || v > 0.5) ? 0.10 : v;
+    }
+
+    /** Default dataset (2009–2018) shown when user opens the Model Builder page. */
     const DEFAULT_INPUT_DATA = [
-        { Year: 2024, Tropical_Depression: 3, Tropical_Storms: 2, Severe_Tropical_Storms: 1, Typhoons: 1, Super_Typhoons: 0, Floods: 2, Storm_Surges: 1, Precipitation_mm: 2107, Seawall_m: 1155, Vegetation_area_sqm: 1914937, Coastal_Elevation: 2.00, Soil_loss_sqm: 28805.02 },
-        { Year: 2023, Tropical_Depression: 1, Tropical_Storms: 2, Severe_Tropical_Storms: 0, Typhoons: 0, Super_Typhoons: 0, Floods: 1, Storm_Surges: 0, Precipitation_mm: 1992, Seawall_m: 1155, Vegetation_area_sqm: 1939450, Coastal_Elevation: 2.00, Soil_loss_sqm: 24512.55 },
-        { Year: 2022, Tropical_Depression: 1, Tropical_Storms: 1, Severe_Tropical_Storms: 1, Typhoons: 0, Super_Typhoons: 1, Floods: 2, Storm_Surges: 0, Precipitation_mm: 2004, Seawall_m: 945, Vegetation_area_sqm: 1975836, Coastal_Elevation: 2.02, Soil_loss_sqm: 36386.46 },
-        { Year: 2021, Tropical_Depression: 0, Tropical_Storms: 3, Severe_Tropical_Storms: 0, Typhoons: 0, Super_Typhoons: 0, Floods: 2, Storm_Surges: 0, Precipitation_mm: 1601, Seawall_m: 540, Vegetation_area_sqm: 2034078, Coastal_Elevation: 2.02, Soil_loss_sqm: 58241.24 },
-        { Year: 2020, Tropical_Depression: 4, Tropical_Storms: 0, Severe_Tropical_Storms: 0, Typhoons: 0, Super_Typhoons: 0, Floods: 1, Storm_Surges: 0, Precipitation_mm: 1558, Seawall_m: 0, Vegetation_area_sqm: 2116879, Coastal_Elevation: 2.04, Soil_loss_sqm: 82801.55 },
-        { Year: 2019, Tropical_Depression: 3, Tropical_Storms: 1, Severe_Tropical_Storms: 1, Typhoons: 0, Super_Typhoons: 0, Floods: 2, Storm_Surges: 0, Precipitation_mm: 1889, Seawall_m: 0, Vegetation_area_sqm: 2212174, Coastal_Elevation: 2.04, Soil_loss_sqm: 95294.58 },
-        { Year: 2018, Tropical_Depression: 2, Tropical_Storms: 1, Severe_Tropical_Storms: 0, Typhoons: 1, Super_Typhoons: 0, Floods: 1, Storm_Surges: 0, Precipitation_mm: 1891, Seawall_m: 0, Vegetation_area_sqm: 2302958, Coastal_Elevation: 2.05, Soil_loss_sqm: 90784.39 },
-        { Year: 2017, Tropical_Depression: 2, Tropical_Storms: 2, Severe_Tropical_Storms: 0, Typhoons: 0, Super_Typhoons: 0, Floods: 1, Storm_Surges: 0, Precipitation_mm: 1647, Seawall_m: 0, Vegetation_area_sqm: 2390654, Coastal_Elevation: 2.08, Soil_loss_sqm: 87695.70 },
-        { Year: 2016, Tropical_Depression: 1, Tropical_Storms: 2, Severe_Tropical_Storms: 0, Typhoons: 0, Super_Typhoons: 1, Floods: 2, Storm_Surges: 1, Precipitation_mm: 1877, Seawall_m: 0, Vegetation_area_sqm: 2485590, Coastal_Elevation: 2.08, Soil_loss_sqm: 94936.12 },
-        { Year: 2015, Tropical_Depression: 3, Tropical_Storms: 2, Severe_Tropical_Storms: 0, Typhoons: 1, Super_Typhoons: 0, Floods: 2, Storm_Surges: 1, Precipitation_mm: 1978, Seawall_m: 0, Vegetation_area_sqm: 2582260, Coastal_Elevation: 2.10, Soil_loss_sqm: 96670 },
+        { Year: 2018, Trop_Depressions: 4, Trop_Storms: 3, Sev_Trop_Storms: 1, Typhoons: 1, Super_Typhoons: 0, Floods: 2, Storm_Surges: 0, Precipitation_mm: 2365, Seawall_m: 1537, Veg_Area_Sqm: 1828043, Coastal_Elevation: 2.06, Soil_Loss_Sqm: 80045.17 },
+        { Year: 2017, Trop_Depressions: 1, Trop_Storms: 2, Sev_Trop_Storms: 2, Typhoons: 2, Super_Typhoons: 0, Floods: 3, Storm_Surges: 1, Precipitation_mm: 2286, Seawall_m: 1471, Veg_Area_Sqm: 1863028, Coastal_Elevation: 1.93, Soil_Loss_Sqm: 87493.48 },
+        { Year: 2016, Trop_Depressions: 3, Trop_Storms: 1, Sev_Trop_Storms: 1, Typhoons: 1, Super_Typhoons: 1, Floods: 2, Storm_Surges: 2, Precipitation_mm: 1727, Seawall_m: 1105, Veg_Area_Sqm: 1801427, Coastal_Elevation: 2.17, Soil_Loss_Sqm: 73378.48 },
+        { Year: 2015, Trop_Depressions: 2, Trop_Storms: 1, Sev_Trop_Storms: 1, Typhoons: 1, Super_Typhoons: 1, Floods: 3, Storm_Surges: 1, Precipitation_mm: 1608, Seawall_m: 1121, Veg_Area_Sqm: 1837823, Coastal_Elevation: 2.19, Soil_Loss_Sqm: 80439.57 },
+        { Year: 2014, Trop_Depressions: 1, Trop_Storms: 0, Sev_Trop_Storms: 1, Typhoons: 2, Super_Typhoons: 1, Floods: 3, Storm_Surges: 1, Precipitation_mm: 2293, Seawall_m: 672, Veg_Area_Sqm: 1801065, Coastal_Elevation: 2.09, Soil_Loss_Sqm: 92464.67 },
+        { Year: 2013, Trop_Depressions: 3, Trop_Storms: 0, Sev_Trop_Storms: 2, Typhoons: 1, Super_Typhoons: 0, Floods: 3, Storm_Surges: 0, Precipitation_mm: 1589, Seawall_m: 446, Veg_Area_Sqm: 1812619, Coastal_Elevation: 2.17, Soil_Loss_Sqm: 68236.59 },
+        { Year: 2012, Trop_Depressions: 1, Trop_Storms: 2, Sev_Trop_Storms: 1, Typhoons: 1, Super_Typhoons: 0, Floods: 3, Storm_Surges: 1, Precipitation_mm: 2457, Seawall_m: 154, Veg_Area_Sqm: 1870783, Coastal_Elevation: 2.04, Soil_Loss_Sqm: 114889.73 },
+        { Year: 2011, Trop_Depressions: 0, Trop_Storms: 4, Sev_Trop_Storms: 1, Typhoons: 2, Super_Typhoons: 0, Floods: 3, Storm_Surges: 2, Precipitation_mm: 2186, Seawall_m: 0, Veg_Area_Sqm: 1918874, Coastal_Elevation: 1.94, Soil_Loss_Sqm: 120000 },
+        { Year: 2010, Trop_Depressions: 2, Trop_Storms: 3, Sev_Trop_Storms: 2, Typhoons: 1, Super_Typhoons: 1, Floods: 2, Storm_Surges: 0, Precipitation_mm: 2073, Seawall_m: 273, Veg_Area_Sqm: 1966548, Coastal_Elevation: 2.19, Soil_Loss_Sqm: 90339.54 },
+        { Year: 2009, Trop_Depressions: 3, Trop_Storms: 3, Sev_Trop_Storms: 1, Typhoons: 1, Super_Typhoons: 1, Floods: 2, Storm_Surges: 1, Precipitation_mm: 2246, Seawall_m: 0, Veg_Area_Sqm: 1901210, Coastal_Elevation: 2.17, Soil_Loss_Sqm: 82048.97 },
     ];
 
     const YEAR_MIN = 1900;
     const YEAR_MAX = 2100;
 
-    /** Paper-based regression: default model from the research paper (static values from the study). All 11 predictors have numeric values so the table never shows blanks. */
-    const PAPER_EQUATION_STR = 'Soil Loss = 49,218.016 - 61.646(Seawall) + 19.931(Precipitation) + 1779.250(Tropical Storm) + 2489.243(Flood)';
-    const PAPER_REGRESSION = {
-        intercept: 49218.016,
-        coefficients: {
-            Tropical_Depression: 0,
-            Tropical_Storms: 1779.250,
-            Severe_Tropical_Storms: 0,
-            Typhoons: 0,
-            Super_Typhoons: 0,
-            Floods: 2489.243,
-            Storm_Surges: 0,
-            Precipitation_mm: 19.931,
-            Seawall_m: -61.646,
-            Vegetation_area_sqm: 0,
-            Coastal_Elevation: 0,
-        },
-        p_values: {
-            intercept: 0,
-            Tropical_Depression: 1,
-            Tropical_Storms: 0.027,
-            Severe_Tropical_Storms: 1,
-            Typhoons: 1,
-            Super_Typhoons: 1,
-            Floods: 0.026,
-            Storm_Surges: 1,
-            Precipitation_mm: 0.014,
-            Seawall_m: 0,
-            Vegetation_area_sqm: 1,
-            Coastal_Elevation: 1,
-        },
-        standard_errors: {
-            intercept: 4136.960,
-            Tropical_Depression: 0.0001,
-            Tropical_Storms: 476.911,
-            Severe_Tropical_Storms: 0.0001,
-            Typhoons: 0.0001,
-            Super_Typhoons: 0.0001,
-            Floods: 805.221,
-            Storm_Surges: 0.0001,
-            Precipitation_mm: 2.419,
-            Seawall_m: 0.849,
-            Vegetation_area_sqm: 0.0001,
-            Coastal_Elevation: 0.0001,
-        },
-        t_statistics: {
-            intercept: 11.90,
-            Tropical_Depression: 0,
-            Tropical_Storms: 3.73,
-            Severe_Tropical_Storms: 0,
-            Typhoons: 0,
-            Super_Typhoons: 0,
-            Floods: 3.09,
-            Storm_Surges: 0,
-            Precipitation_mm: 8.24,
-            Seawall_m: -72.61,
-            Vegetation_area_sqm: 0,
-            Coastal_Elevation: 0,
-        },
-        r_squared: 0.999,
-        adjusted_r_squared: 0.999,
-        standard_error_of_estimate: 1064.486,
-        significance_pvalue: 0.027,
-    };
-    const PAPER_SAMPLE_INPUTS = { Seawall_m: 1155, Precipitation_mm: 1854.4, Tropical_Storms: 1.60, Floods: 1.60 };
-    const PAPER_SAMPLE_RESULT = 21806.5212;
-
     let lastRegression = null;
     let lastAux = null;
-    let isPaperDefault = false;
 
     function collectRows() {
         const rows = [];
@@ -239,9 +192,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return rows;
     }
 
-    /** True if row has numeric Soil_loss_sqm and every predictor has a numeric value (blanks = incomplete). */
+    /** True if row has numeric Soil_Loss_Sqm and every predictor has a numeric value (blanks = incomplete). */
     function isRowComplete(row) {
-        const target = row.Soil_loss_sqm;
+        const target = row.Soil_Loss_Sqm;
         if (!target || isNaN(parseFloat(target))) return false;
         for (const col of PREDICTOR_COLUMNS) {
             const v = row[col];
@@ -251,9 +204,19 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
     }
 
-    /** Return only rows that have valid Soil_Loss_Sqm and complete predictor data; blanks/incomplete rows are excluded. */
-    function filterCompleteRows(rows) {
-        return rows.filter(isRowComplete);
+    /** Return only rows that have valid Soil_Loss_Sqm and numeric values for every required predictor. */
+    function filterCompleteRows(rows, predictorCols) {
+        const cols = predictorCols || PREDICTOR_COLUMNS;
+        return rows.filter((row) => {
+            const target = row.Soil_Loss_Sqm;
+            if (!target || isNaN(parseFloat(target))) return false;
+            for (const col of cols) {
+                const v = row[col];
+                if (v === undefined || v === '' || v === null) return false;
+                if (isNaN(parseFloat(v))) return false;
+            }
+            return true;
+        });
     }
 
     function clearCellErrors() {
@@ -278,11 +241,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const errors = [];
         let hasAnyTarget = false;
         rows.forEach((row, i) => {
-            const target = row.Soil_loss_sqm;
+            const target = row.Soil_Loss_Sqm;
             if (target && !isNaN(parseFloat(target))) hasAnyTarget = true;
             if (target && isNaN(parseFloat(target))) {
-                errors.push(`Row ${i + 1}: Soil_loss_sqm must be numeric.`);
-                markCellInvalid(i, 'Soil_loss_sqm');
+                errors.push(`Row ${i + 1}: Soil_Loss_Sqm must be numeric.`);
+                markCellInvalid(i, 'Soil_Loss_Sqm');
             }
             if (row.Year) {
                 const y = parseInt(row.Year, 10);
@@ -301,9 +264,9 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
         if (!hasAnyTarget) {
-            errors.push('At least one row must have a numeric Soil_loss_sqm (target).');
+            errors.push('At least one row must have a numeric Soil_Loss_Sqm (target).');
         }
-        const completeRows = filterCompleteRows(rows);
+        const completeRows = filterCompleteRows(rows, getSelectedPredictors());
         if (completeRows.length < MIN_VALID_ROWS) {
             errors.push('At least 5 rows with valid Soil_Loss_Sqm and complete predictor data are required to run regression.');
         }
@@ -345,43 +308,18 @@ document.addEventListener('DOMContentLoaded', () => {
         resultsContent.hidden = loading || !lastRegression;
     }
 
-    /** Return true if the given rows match the default dataset (2015–2024) so we show the paper model. */
-    function isDefaultData(rows) {
-        if (!Array.isArray(rows) || rows.length !== DEFAULT_INPUT_DATA.length) return false;
-        for (let i = 0; i < rows.length; i++) {
-            const r = rows[i];
-            const d = DEFAULT_INPUT_DATA[i];
-            for (const col of COLUMNS) {
-                const rv = r[col];
-                const dv = d[col];
-                const rNum = parseFloat(rv);
-                const dNum = parseFloat(dv);
-                if (!Number.isNaN(rNum) && !Number.isNaN(dNum)) {
-                    if (Math.abs(rNum - dNum) > 1e-6) return false;
-                } else {
-                    if (String(rv || '').trim() !== String(dv ?? '').trim()) return false;
-                }
-            }
-        }
-        return true;
-    }
-
     async function runRegression() {
         const rows = collectRows();
+        const selectedPreds = getSelectedPredictors();
         const errors = validateRows(rows);
         if (errors.length > 0) {
             showError(errors.join(' '));
             return;
         }
-        const validRows = filterCompleteRows(rows);
+        const validRows = filterCompleteRows(rows, selectedPreds);
         clearCellErrors();
         hideError();
         hideWarnings();
-
-        if (isDefaultData(validRows)) {
-            applyPaperDefault();
-            return;
-        }
 
         setLoading(true);
         try {
@@ -394,7 +332,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Accept': 'application/json',
                     'X-CSRF-TOKEN': csrf,
                 },
-                body: JSON.stringify({ rows: validRows }),
+                body: JSON.stringify({
+                    rows: validRows,
+                    regression_method: getRegressionMethod(),
+                    entry_p: getEntryP(),
+                    removal_p: getRemovalP(),
+                    dependent_variable: 'Soil_Loss_Sqm',
+                    selected_predictors: getSelectedPredictors(),
+                }),
             });
             let data;
             try {
@@ -414,11 +359,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             lastRegression = data.regression;
             lastAux = data.aux ?? null;
-            isPaperDefault = false;
             renderResults(data.regression);
             hideError();
             showWarnings(data.warnings);
-            updateDefaultModelNote();
             updateSamplePredictionResult();
         } catch (e) {
             showError(e.message || 'Request failed.');
@@ -433,13 +376,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return n.toLocaleString('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
     }
 
-    /** Get current p-value threshold (default 0.05), clamped to valid range */
+    /** Get p-value threshold for coefficient significance display (default 0.05). */
     function getPThreshold() {
-        const el = pValueThresholdInput;
-        if (!el) return 0.05;
-        const v = parseFloat(el.value, 10);
-        if (isNaN(v) || v < 0.01 || v > 0.5) return 0.05;
-        return v;
+        return getEntryP();
     }
 
     /**
@@ -463,8 +402,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const beta = coefficients[name];
             if (typeof beta !== 'number') return;
             const absVal = formatNum(Math.abs(beta));
-            const term = '(' + absVal + ' × ' + name + ')';
-            lines.push(beta < 0 ? '− ' + term : '+ ' + term);
+            const displayName = name.replace(/_/g, ' ');
+            const term = absVal + '(' + displayName + ')';
+            lines.push(beta < 0 ? ' − ' + term : ' + ' + term);
         });
         return lines.join('\n');
     }
@@ -505,15 +445,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderResults(reg) {
         const pThreshold = getPThreshold();
-        const equationStr = buildDynamicEquation(reg, pThreshold);
-        const significantList = getSignificantPredictors(reg, pThreshold);
+        const isStepwise = !!reg.stepwise_mode;
+        const equationStr = (isStepwise && reg.equation) ? reg.equation : buildDynamicEquation(reg, pThreshold);
+        const significantList = isStepwise && Array.isArray(reg.selected_predictors)
+            ? reg.selected_predictors
+            : getSignificantPredictors(reg, pThreshold);
         const hasPValues = reg.p_values && Object.keys(reg.p_values).length > 0;
         const hasSignificant = significantList.length > 0;
 
         if (generatedModelContent) generatedModelContent.hidden = hasPValues && !hasSignificant;
         if (noSignificantPredictors) noSignificantPredictors.hidden = !hasPValues || hasSignificant;
+        const stepwiseNote = document.getElementById('stepwiseNote');
+        if (stepwiseNote) stepwiseNote.hidden = !reg.stepwise_mode;
 
-        /* Always persist the equation (including intercept-only) so Save Equation works after any regression run */
         renderEquation(equationStr);
 
         if (significantPredictorsList) {
@@ -527,8 +471,12 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        const r2Str = reg.r_squared != null ? String(reg.r_squared) : '—';
-        const adjR2Str = reg.adjusted_r_squared != null ? String(reg.adjusted_r_squared) : '—';
+        const r2Str = reg.r_squared != null && typeof reg.r_squared === 'number'
+            ? reg.r_squared.toFixed(6)
+            : (reg.r_squared != null ? String(reg.r_squared) : '—');
+        const adjR2Str = reg.adjusted_r_squared != null && typeof reg.adjusted_r_squared === 'number'
+            ? reg.adjusted_r_squared.toFixed(6)
+            : (reg.adjusted_r_squared != null ? String(reg.adjusted_r_squared) : '—');
 
         if (metricR2) metricR2.textContent = r2Str;
         if (metricAdjR2) metricAdjR2.textContent = adjR2Str;
@@ -541,8 +489,120 @@ document.addEventListener('DOMContentLoaded', () => {
             metricStdErrEstimate.textContent = typeof v === 'number' ? v.toLocaleString('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) : '—';
         }
         if (metricSignificancePvalue) {
-            const v = reg.significance_pvalue;
-            metricSignificancePvalue.textContent = typeof v === 'number' ? String(v) : '—';
+            const v = reg.anova?.p_value ?? reg.significance_pvalue;
+            metricSignificancePvalue.textContent = typeof v === 'number' ? v.toFixed(6) : '—';
+        }
+
+        const anova = reg.anova || {};
+        const fmtNum = (v) => (typeof v === 'number' && !Number.isNaN(v) ? v.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : '—');
+        const setAnova = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+        setAnova('anovaSSRegression', fmtNum(anova.ss_regression));
+        setAnova('anovaSSResidual', fmtNum(anova.ss_residual));
+        setAnova('anovaSSTotal', fmtNum(anova.ss_total));
+        setAnova('anovaDfRegression', anova.df_regression != null ? String(anova.df_regression) : '—');
+        setAnova('anovaDfResidual', anova.df_residual != null ? String(anova.df_residual) : '—');
+        const n = Array.isArray(reg.residuals) ? reg.residuals.length : 0;
+        const dfTotal = n > 0 ? n - 1 : '—';
+        setAnova('anovaDfTotal', typeof dfTotal === 'number' ? String(dfTotal) : dfTotal);
+        setAnova('anovaMSRegression', fmtNum(anova.ms_regression));
+        setAnova('anovaMSResidual', fmtNum(anova.ms_residual));
+        setAnova('anovaF', fmtNum(anova.F));
+        setAnova('anovaSig', typeof anova.p_value === 'number' ? String(anova.p_value) : '—');
+
+        const stepLogWrap = document.getElementById('stepLogWrap');
+        const stepLogList = document.getElementById('stepLogList');
+        if (stepLogWrap && stepLogList && Array.isArray(reg.step_log)) {
+            stepLogList.innerHTML = '';
+            reg.step_log.forEach((entry) => {
+                const li = document.createElement('li');
+                li.className = 'mb-step-log-item';
+                if (entry.action === 'entered') {
+                    let html = `Step ${entry.step}: Entered ${escapeHtml(entry.variable)}`;
+                    if (entry.partial_f != null) html += ` (partial F = ${Number(entry.partial_f)}, p = ${entry.f_p_value ?? entry.p_value ?? '—'})`;
+                    html += '.';
+                    if (Array.isArray(entry.removal_checks) && entry.removal_checks.length) {
+                        html += ' Removal checks: ' + entry.removal_checks.map((r) => `${escapeHtml(r.variable)}: ${r.removal_decision} (partial F = ${r.partial_f ?? '—'}, p = ${r.f_p_value ?? '—'})`).join('; ') + '.';
+                    }
+                    html += ' Retained after step: ' + (entry.retained || []).join(', ') + '.';
+                    if (Array.isArray(entry.candidates_tested) && entry.candidates_tested.length) {
+                        html += '<ul class="mb-step-log-sublist">';
+                        entry.candidates_tested.forEach((c) => {
+                            const reason = c.rejected_reason ? ` — ${escapeHtml(c.rejected_reason)}` : '';
+                            html += `<li>Candidate ${escapeHtml(c.variable)}: partial F = ${c.partial_f ?? '—'}, p = ${c.f_p_value ?? '—'}, ${c.entry_decision ?? '—'}${reason}</li>`;
+                        });
+                        html += '</ul>';
+                    }
+                    li.innerHTML = html;
+                } else if (entry.action === 'removed') {
+                    li.textContent = `Step ${entry.step}: Removed ${entry.variable}. Retained: ${(entry.retained || []).join(', ')}`;
+                } else if (entry.action === 'no_entry') {
+                    let html = `Step ${entry.step}: No entry. ${escapeHtml(entry.entry_decision || 'No candidate meets entry criterion.')} Final retained predictors: ${(entry.retained || []).join(', ')}`;
+                    if (Array.isArray(entry.candidates_tested) && entry.candidates_tested.length) {
+                        html += '<ul class="mb-step-log-sublist">';
+                        entry.candidates_tested.forEach((c) => {
+                            const reason = c.rejected_reason ? ` — ${escapeHtml(c.rejected_reason)}` : '';
+                            html += `<li>Candidate ${escapeHtml(c.variable)}: partial F = ${c.partial_f ?? '—'}, p = ${c.f_p_value ?? '—'}, ${c.entry_decision ?? '—'}${reason}</li>`;
+                        });
+                        html += '</ul>';
+                    }
+                    li.innerHTML = html;
+                } else {
+                    li.textContent = `Step ${entry.step}: ${entry.action}`;
+                }
+                stepLogList.appendChild(li);
+            });
+            stepLogWrap.hidden = reg.step_log.length === 0;
+        } else if (stepLogWrap) {
+            stepLogWrap.hidden = true;
+        }
+
+        const settings = reg.validation?.stepwise_settings;
+        const stepwiseThresholdTag = document.getElementById('stepwiseThresholdTag');
+        if (stepwiseThresholdTag && settings) {
+            const ep = settings.entry_p;
+            const rp = settings.removal_p;
+            const isSpss = (typeof ep === 'number' && Math.abs(ep - 0.05) < 1e-6 && typeof rp === 'number' && Math.abs(rp - 0.10) < 1e-6);
+            stepwiseThresholdTag.textContent = isSpss ? 'SPSS default (0.05 / 0.10)' : 'Custom (' + ep + ' / ' + rp + ')';
+            stepwiseThresholdTag.classList.toggle('mb-tag-spss', isSpss);
+            stepwiseThresholdTag.classList.toggle('mb-tag-custom', !isSpss);
+        }
+
+        const developerValidationCard = document.getElementById('developerValidationCard');
+        const validationContent = document.getElementById('validationContent');
+        const showValidation = window.location.search.includes('validation=1') && reg.validation;
+        if (developerValidationCard) developerValidationCard.hidden = !showValidation;
+        if (showValidation && validationContent && reg.validation) {
+            const v = reg.validation;
+            const sections = [];
+            if (v.parsed_input_matrix) sections.push('<h5>Parsed input matrix (X)</h5><pre>' + escapeHtml(JSON.stringify(v.parsed_input_matrix, null, 2)) + '</pre>');
+            if (v.dependent_variable_vector) sections.push('<h5>Dependent variable vector (Y)</h5><pre>' + escapeHtml(JSON.stringify(v.dependent_variable_vector)) + '</pre>');
+            if (v.selected_predictor_names) sections.push('<h5>Selected predictor names</h5><pre>' + escapeHtml(JSON.stringify(v.selected_predictor_names)) + '</pre>');
+            if (v.coefficients_full_precision) sections.push('<h5>Coefficients (full precision)</h5><pre>' + escapeHtml(JSON.stringify(v.coefficients_full_precision)) + '</pre>');
+            if (v.intercept_full_precision !== undefined) sections.push('<h5>Intercept (full precision)</h5><pre>' + String(v.intercept_full_precision) + '</pre>');
+            if (v.y_mean !== undefined) sections.push('<h5>Y mean</h5><pre>' + String(v.y_mean) + '</pre>');
+            if (v.predicted_values_full_precision) sections.push('<h5>Predicted values (full precision)</h5><pre>' + escapeHtml(JSON.stringify(v.predicted_values_full_precision)) + '</pre>');
+            if (v.residuals_full_precision) sections.push('<h5>Residuals (full precision)</h5><pre>' + escapeHtml(JSON.stringify(v.residuals_full_precision)) + '</pre>');
+            if (v.sst !== undefined) sections.push('<h5>SST, SSR, SSE</h5><pre>SST=' + v.sst + ', SSR=' + v.ssr + ', SSE=' + v.sse + '</pre>');
+            if (v.r_squared !== undefined) sections.push('<h5>R², Adjusted R², Std. Error of Estimate</h5><pre>R²=' + v.r_squared + ', Adj R²=' + v.adjusted_r_squared + ', SEE=' + v.standard_error_of_estimate + '</pre>');
+            if (v.coefficient_standard_errors) sections.push('<h5>Coefficient standard errors</h5><pre>' + escapeHtml(JSON.stringify(v.coefficient_standard_errors)) + '</pre>');
+            if (v.t_values) sections.push('<h5>t values</h5><pre>' + escapeHtml(JSON.stringify(v.t_values)) + '</pre>');
+            if (v.coefficient_p_values) sections.push('<h5>Coefficient p-values</h5><pre>' + escapeHtml(JSON.stringify(v.coefficient_p_values)) + '</pre>');
+            if (v.model_F !== undefined) sections.push('<h5>Model F, model p-value</h5><pre>F=' + v.model_F + ', p=' + v.model_p_value + '</pre>');
+            if (v.correlations && Object.keys(v.correlations).length) {
+                const rows = Object.entries(v.correlations).map(([name, r]) => `<tr><td>${escapeHtml(name)}</td><td>${typeof r === 'number' ? r.toFixed(6) : '—'}</td></tr>`).join('');
+                sections.push('<h5>Correlations with dependent</h5><table class="mb-data-table"><thead><tr><th>Predictor</th><th>r</th></tr></thead><tbody>' + rows + '</tbody></table>');
+            }
+            if (v.simple_regressions && v.simple_regressions.length) {
+                const rows = v.simple_regressions.map((s) => {
+                    if (s.error) return `<tr><td>${escapeHtml(s.variable)}</td><td colspan="5">${escapeHtml(s.error)}</td></tr>`;
+                    return `<tr><td>${escapeHtml(s.variable)}</td><td>${typeof s.r_squared === 'number' ? s.r_squared.toFixed(6) : '—'}</td><td>${typeof s.intercept === 'number' ? s.intercept.toFixed(6) : '—'}</td><td>${typeof s.coefficient === 'number' ? s.coefficient.toFixed(6) : '—'}</td><td>${typeof s.t === 'number' ? s.t.toFixed(6) : '—'}</td><td>${typeof s.p_value === 'number' ? s.p_value.toFixed(6) : '—'}</td></tr>`;
+                }).join('');
+                sections.push('<h5>Simple regressions (first step)</h5><table class="mb-data-table"><thead><tr><th>Predictor</th><th>R²</th><th>Intercept</th><th>Coefficient</th><th>t</th><th>p-value</th></tr></thead><tbody>' + rows + '</tbody></table>');
+            }
+            if (reg.step_log && reg.step_log.length) {
+                sections.push('<h5>Stepwise step log (entry/removal decisions)</h5><pre>' + escapeHtml(JSON.stringify(reg.step_log, null, 2)) + '</pre>');
+            }
+            validationContent.innerHTML = sections.join('');
         }
 
         coefficientsTbody.innerHTML = '';
@@ -576,7 +636,10 @@ document.addEventListener('DOMContentLoaded', () => {
         interceptRow.innerHTML = buildCoefRow('intercept', interceptVal, interceptSE, interceptT, interceptP, true);
         coefficientsTbody.appendChild(interceptRow);
 
-        FULL_PREDICTOR_LIST.forEach((name) => {
+        const predictorList = (reg.stepwise_mode && Array.isArray(reg.selected_predictors) && reg.selected_predictors.length > 0)
+            ? reg.selected_predictors
+            : FULL_PREDICTOR_LIST;
+        predictorList.forEach((name) => {
             const inOfficial = hasInOfficial(name);
             const value = inOfficial ? (coefs[name] ?? aux.coefficients?.[name]) : (aux.coefficients?.[name] ?? null);
             const se = inOfficial ? (stdErrors[name] ?? aux.standard_errors?.[name]) : (aux.standard_errors?.[name] ?? null);
@@ -596,18 +659,11 @@ document.addEventListener('DOMContentLoaded', () => {
         resultsContent.querySelectorAll('.mb-fade-in').forEach((el, i) => {
             el.style.animationDelay = `${i * 0.08}s`;
         });
-        updateDefaultModelNote();
         updateSamplePredictionResult();
         createMbIcons();
     }
 
-    /** Show or hide the paper-based stats note based on isPaperDefault. */
-    function updateDefaultModelNote() {
-        const note = document.getElementById('paperStatsNote');
-        if (note) note.hidden = !isPaperDefault;
-    }
-
-    /** Compute prediction from current model (paper or lastRegression) using sample prediction inputs. */
+    /** Compute prediction from current model (lastRegression) using sample prediction inputs. */
     function computeSamplePrediction() {
         const reg = lastRegression;
         if (!reg) return null;
@@ -635,28 +691,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         resultEl.textContent = typeof y === 'number' ? y.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 }) + ' sq.m' : '—';
-    }
-
-    /** Apply paper-based regression as the default state: equation, coefficients, sample inputs and result. */
-    function applyPaperDefault() {
-        lastRegression = PAPER_REGRESSION;
-        lastAux = null;
-        isPaperDefault = true;
-        renderResults(PAPER_REGRESSION);
-        renderEquation(PAPER_EQUATION_STR);
-        if (regressionEquationFormatted) regressionEquationFormatted.dataset.rawEquation = PAPER_EQUATION_STR;
-        const sw = document.getElementById('samplePredictionSeawall');
-        const pr = document.getElementById('samplePredictionPrecip');
-        const ts = document.getElementById('samplePredictionTropicalStorm');
-        const fl = document.getElementById('samplePredictionFlood');
-        const res = document.getElementById('samplePredictionResult');
-        if (sw) sw.value = String(PAPER_SAMPLE_INPUTS.Seawall_m);
-        if (pr) pr.value = String(PAPER_SAMPLE_INPUTS.Precipitation_mm);
-        if (ts) ts.value = String(PAPER_SAMPLE_INPUTS.Tropical_Storms);
-        if (fl) fl.value = String(PAPER_SAMPLE_INPUTS.Floods);
-        if (res) res.textContent = PAPER_SAMPLE_RESULT.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 }) + ' sq.m';
-        updateDefaultModelNote();
-        createMbIcons();
     }
 
     function escapeHtml(s) {
@@ -715,7 +749,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let i = 1; i < years.length; i++) {
             if (years[i] >= years[i - 1] || isNaN(years[i])) return false;
         }
-        const soilLosses = rows.map((r) => Number(r.Soil_loss_sqm));
+        const soilLosses = rows.map((r) => Number(r.Soil_Loss_Sqm));
         const uniqueSoil = new Set(soilLosses.map((v) => Math.round(v * 100)));
         if (uniqueSoil.size < 3) return false;
         for (const row of rows) {
@@ -793,18 +827,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 rows.push({
                     Year: year,
-                    Tropical_Depression: tropDep,
-                    Tropical_Storms: tropStorms,
-                    Severe_Tropical_Storms: sevTrop,
+                    Trop_Depressions: tropDep,
+                    Trop_Storms: tropStorms,
+                    Sev_Trop_Storms: sevTrop,
                     Typhoons: typhoons,
                     Super_Typhoons: superTyphoons,
                     Floods: floods,
                     Storm_Surges: stormSurges,
                     Precipitation_mm: precipitation_mm,
                     Seawall_m: seawall_m,
-                    Vegetation_area_sqm: vegetation_area_sqm,
+                    Veg_Area_Sqm: vegetation_area_sqm,
                     Coastal_Elevation: coastal_elevation,
-                    Soil_loss_sqm: soil_loss_sqm,
+                    Soil_Loss_Sqm: soil_loss_sqm,
                 });
             }
 
@@ -858,11 +892,9 @@ document.addEventListener('DOMContentLoaded', () => {
         clearCellErrors();
         lastRegression = null;
         lastAux = null;
-        isPaperDefault = false;
         resultsEmpty.hidden = false;
         resultsContent.hidden = true;
         hideError();
-        updateDefaultModelNote();
     }
 
     function downloadReport() {
@@ -931,6 +963,71 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btnLoadExample')?.addEventListener('click', loadExample);
     document.getElementById('btnClearTable')?.addEventListener('click', clearTable);
 
+    document.getElementById('btnAddRow')?.addEventListener('click', () => {
+        const tbody = inputTable?.querySelector('tbody');
+        if (!tbody) return;
+        const rows = tbody.querySelectorAll('tr');
+        const lastRow = rows[rows.length - 1];
+        const nextNum = lastRow ? parseInt(lastRow.getAttribute('data-row') || '0', 10) + 1 : 1;
+        const tr = document.createElement('tr');
+        tr.setAttribute('data-row', String(nextNum));
+        tr.innerHTML = '<td class="row-num">' + nextNum + '</td>' + COLUMNS.map((col) => {
+            const cls = col === 'Year' ? 'mb-input mb-input-year' : (col === 'Soil_Loss_Sqm' ? 'mb-input mb-target' : 'mb-input');
+            const attrs = col === 'Year' ? ' min="1900" max="2100" step="1" placeholder="—"' : ' min="0" step="any" placeholder="0"';
+            const req = col === 'Soil_Loss_Sqm' ? ' required' : '';
+            return '<td><input type="number" name="' + escapeHtml(col) + '" class="' + cls + '" data-col="' + escapeHtml(col) + '"' + attrs + req + '></td>';
+        }).join('');
+        tbody.appendChild(tr);
+        const allRows = tbody.querySelectorAll('tr');
+        allRows.forEach((r, i) => { r.querySelector('.row-num').textContent = i + 1; r.setAttribute('data-row', String(i + 1)); });
+        createMbIcons();
+    });
+
+    document.getElementById('btnRemoveRow')?.addEventListener('click', () => {
+        const tbody = inputTable?.querySelector('tbody');
+        if (!tbody) return;
+        const rows = tbody.querySelectorAll('tr');
+        if (rows.length <= 1) return;
+        rows[rows.length - 1].remove();
+        rows.forEach((r, i) => { r.querySelector('.row-num').textContent = i + 1; r.setAttribute('data-row', String(i + 1)); });
+    });
+
+    const regressionMethodSelect = document.getElementById('regressionMethodSelect');
+    const stepwiseThresholdsWrap = document.getElementById('stepwiseThresholdsWrap');
+    if (regressionMethodSelect && stepwiseThresholdsWrap) {
+        function toggleStepwiseOptions() {
+            stepwiseThresholdsWrap.hidden = regressionMethodSelect.value === 'enter';
+        }
+        regressionMethodSelect.addEventListener('change', toggleStepwiseOptions);
+        toggleStepwiseOptions();
+    }
+
+    function updateStepwiseTag() {
+        if (getRegressionMethod() !== 'stepwise') return;
+        const tag = document.getElementById('stepwiseThresholdTag');
+        if (!tag) return;
+        const ep = getEntryP();
+        const rp = getRemovalP();
+        const isSpss = Math.abs(ep - 0.05) < 1e-6 && Math.abs(rp - 0.10) < 1e-6;
+        tag.textContent = isSpss ? 'SPSS default (0.05 / 0.10)' : 'Custom (' + ep + ' / ' + rp + ')';
+        tag.classList.toggle('mb-tag-spss', isSpss);
+        tag.classList.toggle('mb-tag-custom', !isSpss);
+    }
+    document.getElementById('entryPInput')?.addEventListener('input', updateStepwiseTag);
+    document.getElementById('entryPInput')?.addEventListener('change', updateStepwiseTag);
+    document.getElementById('removalPInput')?.addEventListener('input', updateStepwiseTag);
+    document.getElementById('removalPInput')?.addEventListener('change', updateStepwiseTag);
+
+    const validationToggle = document.getElementById('validationToggle');
+    const validationPanel = document.getElementById('validationPanel');
+    if (validationToggle && validationPanel) {
+        validationToggle.addEventListener('click', () => {
+            const expanded = validationToggle.getAttribute('aria-expanded') === 'true';
+            validationToggle.setAttribute('aria-expanded', !expanded);
+            validationPanel.hidden = expanded;
+        });
+    }
+
     btnCopyEquation?.addEventListener('click', () => {
         const raw = regressionEquationFormatted?.dataset?.rawEquation?.trim();
         if (!raw) return;
@@ -945,13 +1042,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 1500);
         });
     });
-    pValueThresholdInput?.addEventListener('change', () => {
-        if (lastRegression) renderResults(lastRegression);
-    });
-    pValueThresholdInput?.addEventListener('input', () => {
-        if (lastRegression) renderResults(lastRegression);
-    });
-
     btnRun?.addEventListener('click', runRegression);
 
     // --- Save Equation modal & saved equations table ---
@@ -982,17 +1072,31 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    function openSaveEquationModal() {
-        let raw = regressionEquationFormatted?.dataset?.rawEquation?.trim();
-        if (!raw && lastRegression) {
-            const pThreshold = getPThreshold();
-            raw = buildDynamicEquation(lastRegression, pThreshold) || '';
-            if (raw && regressionEquationFormatted) regressionEquationFormatted.dataset.rawEquation = raw;
+    function buildSaveEquationFormula(reg) {
+        const equationStr = reg.equation || (buildDynamicEquation(reg, getPThreshold()) || '');
+        const lines = [equationStr, ''];
+        lines.push('--- Model Summary ---');
+        lines.push('Dependent variable: Soil_Loss_Sqm');
+        lines.push('Final predictors: ' + (Array.isArray(reg.selected_predictors) ? reg.selected_predictors.join(', ') : Object.keys(reg.coefficients || {}).join(', ')));
+        lines.push('R² = ' + (reg.r_squared != null ? reg.r_squared : '—'));
+        lines.push('Adjusted R² = ' + (reg.adjusted_r_squared != null ? reg.adjusted_r_squared : '—'));
+        lines.push('Standard Error of Estimate = ' + (reg.standard_error_of_estimate != null ? reg.standard_error_of_estimate : '—'));
+        const settings = reg.validation?.stepwise_settings;
+        const method = reg.stepwise_mode ? 'Stepwise' : 'Enter';
+        lines.push('Regression method: ' + method);
+        if (settings) {
+            lines.push('Stepwise thresholds: Entry p ≤ ' + settings.entry_p + ', Removal p ≥ ' + settings.removal_p);
         }
-        if (!raw) {
+        lines.push('Generated: ' + new Date().toISOString());
+        return lines.join('\n');
+    }
+
+    function openSaveEquationModal() {
+        if (!lastRegression) {
             alert('Run a regression first to generate an equation, then click Save Equation.');
             return;
         }
+        const raw = buildSaveEquationFormula(lastRegression);
         if (saveEquationName) saveEquationName.value = '';
         if (saveEquationFormula) saveEquationFormula.value = raw;
         if (saveEquationNameError) { saveEquationNameError.hidden = true; saveEquationNameError.textContent = ''; }
@@ -1317,21 +1421,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btnRunNew?.addEventListener('click', runNewCalculation);
 
-    // Load default dataset (2015–2024) when user opens the Model Builder page.
+    // Load default dataset when user opens the Model Builder page.
     applyExampleToTable(DEFAULT_INPUT_DATA);
 
     // Do not show results until user clicks "Run Regression".
     lastRegression = null;
     lastAux = null;
-    isPaperDefault = false;
     setLoading(false);
-    updateDefaultModelNote();
 
     ['samplePredictionSeawall', 'samplePredictionPrecip', 'samplePredictionTropicalStorm', 'samplePredictionFlood'].forEach((id) => {
         document.getElementById(id)?.addEventListener('input', updateSamplePredictionResult);
         document.getElementById(id)?.addEventListener('change', updateSamplePredictionResult);
     });
-    document.getElementById('btnResetToPaper')?.addEventListener('click', applyPaperDefault);
 
     createMbIcons();
 });

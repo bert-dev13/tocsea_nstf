@@ -9,23 +9,39 @@ use Illuminate\Validation\ValidationException;
 
 class ModelBuilderController extends Controller
 {
-    /** Predictor columns (X) for multiple linear regression */
-    private const FEATURE_COLUMNS = [
-        'Tropical_Depression',
-        'Tropical_Storms',
-        'Severe_Tropical_Storms',
+    /** All candidate predictor column names (Year excluded by default; user can include via predictor selection). */
+    private const ALL_PREDICTOR_COLUMNS = [
+        'Year',
+        'Trop_Depressions',
+        'Trop_Storms',
+        'Sev_Trop_Storms',
         'Typhoons',
         'Super_Typhoons',
         'Floods',
         'Storm_Surges',
         'Precipitation_mm',
         'Seawall_m',
-        'Vegetation_area_sqm',
+        'Veg_Area_Sqm',
+        'Coastal_Elevation',
+    ];
+
+    /** Default predictors (all except Year) for SPSS-aligned stepwise. */
+    private const DEFAULT_PREDICTOR_COLUMNS = [
+        'Trop_Depressions',
+        'Trop_Storms',
+        'Sev_Trop_Storms',
+        'Typhoons',
+        'Super_Typhoons',
+        'Floods',
+        'Storm_Surges',
+        'Precipitation_mm',
+        'Seawall_m',
+        'Veg_Area_Sqm',
         'Coastal_Elevation',
     ];
 
     /** Target column (y) */
-    private const TARGET_COLUMN = 'Soil_loss_sqm';
+    private const TARGET_COLUMN = 'Soil_Loss_Sqm';
 
     /** Minimum number of rows with valid target and complete predictor data to run regression. */
     private const MIN_VALID_ROWS = 5;
@@ -48,11 +64,14 @@ class ModelBuilderController extends Controller
     }
 
     /**
-     * Keep only rows that have valid Soil_loss_sqm and numeric values for all predictor columns.
-     * Excludes: missing/blank target, target === 0 (placeholder), any predictor missing/blank,
-     * and rows that are entirely zeros (target + all predictors zero).
+     * Keep only rows that have valid target and numeric values for all selected predictor columns.
+     * Excludes: missing/blank target, target === 0 (placeholder), any selected predictor missing/blank,
+     * and rows that are entirely zeros (target + all selected predictors zero).
+     *
+     * @param array<int, array<string, mixed>> $rows
+     * @param array<string> $predictorColumns Column names to require as numeric
      */
-    private function filterCompleteRows(array $rows): array
+    private function filterCompleteRows(array $rows, array $predictorColumns): array
     {
         $out = [];
         foreach ($rows as $row) {
@@ -61,12 +80,11 @@ class ModelBuilderController extends Controller
                 continue;
             }
             $targetFloat = (float) $targetVal;
-            // Treat 0 as invalid placeholder for target (unless you explicitly allow it)
             if ($targetFloat === 0.0) {
                 continue;
             }
             $complete = true;
-            foreach (self::FEATURE_COLUMNS as $col) {
+            foreach ($predictorColumns as $col) {
                 $val = $row[$col] ?? null;
                 if ($val === '' || $val === null || ! is_numeric($val)) {
                     $complete = false;
@@ -79,20 +97,23 @@ class ModelBuilderController extends Controller
             $out[] = $row;
         }
 
-        return $this->removeAllZeroRows($out);
+        return $this->removeAllZeroRows($out, $predictorColumns);
     }
 
     /**
-     * Remove rows where target and all predictor columns are zero (e.g. blank row #10).
+     * Remove rows where target and all selected predictor columns are zero.
+     *
+     * @param array<int, array<string, mixed>> $rows
+     * @param array<string> $predictorColumns
      */
-    private function removeAllZeroRows(array $rows): array
+    private function removeAllZeroRows(array $rows, array $predictorColumns): array
     {
-        return array_values(array_filter($rows, function (array $row) {
+        return array_values(array_filter($rows, function (array $row) use ($predictorColumns) {
             $target = (float) ($row[self::TARGET_COLUMN] ?? 0);
             if ($target !== 0.0) {
                 return true;
             }
-            foreach (self::FEATURE_COLUMNS as $col) {
+            foreach ($predictorColumns as $col) {
                 if ((float) ($row[$col] ?? 0) !== 0.0) {
                     return true;
                 }
@@ -240,19 +261,50 @@ class ModelBuilderController extends Controller
 
     /**
      * Run multiple linear regression on submitted table data.
-     * Filters invalid rows, removes constant/collinear predictors, enforces n >= p+2, retries on singular.
+     * Supports Enter (all selected predictors) and Stepwise (SPSS-style).
+     * Filters invalid rows, removes constant/collinear predictors, enforces n >= p+2.
      */
     public function runRegression(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'rows' => ['required', 'array', 'min:1'],
             'rows.*' => ['required', 'array'],
+            'regression_method' => ['sometimes', 'string', 'in:enter,stepwise'],
+            'entry_p' => ['sometimes', 'numeric', 'min:0.01', 'max:0.5'],
+            'removal_p' => ['sometimes', 'numeric', 'min:0.05', 'max:0.5'],
+            'dependent_variable' => ['sometimes', 'string', 'max:64'],
+            'selected_predictors' => ['sometimes', 'array'],
+            'selected_predictors.*' => ['string', 'max:64'],
         ]);
 
         $rows = $validated['rows'];
-        $warnings = [];
+        $regressionMethod = $validated['regression_method'] ?? 'stepwise';
+        $entryP = isset($validated['entry_p']) ? (float) $validated['entry_p'] : RegressionService::STEPWISE_ENTRY_P;
+        $removalP = isset($validated['removal_p']) ? (float) $validated['removal_p'] : RegressionService::STEPWISE_REMOVAL_P;
+        $dependentVariable = $validated['dependent_variable'] ?? self::TARGET_COLUMN;
+        $selectedPredictors = $validated['selected_predictors'] ?? self::DEFAULT_PREDICTOR_COLUMNS;
 
-        $filteredRows = $this->filterCompleteRows($rows);
+        // Normalize and validate predictor names
+        $selectedPredictors = array_values(array_unique(array_map('strval', $selectedPredictors)));
+        $allowedPredictors = array_flip(self::ALL_PREDICTOR_COLUMNS);
+        $usedFeatures = [];
+        foreach ($selectedPredictors as $col) {
+            if (isset($allowedPredictors[$col])) {
+                $usedFeatures[] = $col;
+            }
+        }
+        if (count($usedFeatures) === 0) {
+            $usedFeatures = self::DEFAULT_PREDICTOR_COLUMNS;
+        }
+
+        if ($dependentVariable !== self::TARGET_COLUMN) {
+            throw ValidationException::withMessages([
+                'dependent_variable' => ['Only Soil_Loss_Sqm is supported as the dependent variable.'],
+            ]);
+        }
+
+        $warnings = [];
+        $filteredRows = $this->filterCompleteRows($rows, $usedFeatures);
         $removedZeroRows = count($rows) - count($filteredRows);
         if ($removedZeroRows > 0) {
             $warnings[] = 'Removed empty or placeholder rows (including all-zero rows).';
@@ -260,73 +312,37 @@ class ModelBuilderController extends Controller
 
         if (count($filteredRows) < self::MIN_VALID_ROWS) {
             throw ValidationException::withMessages([
-                'rows' => ['At least 5 rows with valid Soil_Loss_Sqm and complete predictor data are required to run regression.'],
+                'rows' => ['At least 5 rows with valid ' . self::TARGET_COLUMN . ' and complete predictor data are required to run regression.'],
             ]);
         }
 
         $n = count($filteredRows);
-        $maxPredictors = max(1, $n - 2);
-        $usedFeatures = [];
-
-        foreach (self::FEATURE_COLUMNS as $col) {
-            if (count($usedFeatures) >= $maxPredictors) {
-                break;
-            }
-            $hasValues = false;
-            foreach ($filteredRows as $row) {
-                $val = $row[$col] ?? null;
-                if ($val !== '' && $val !== null && is_numeric($val)) {
-                    $hasValues = true;
-                    break;
-                }
-            }
-            if ($hasValues) {
-                $usedFeatures[] = $col;
-            }
-        }
-
         $X = [];
         $y = [];
-
-        $XFull = [];
         foreach ($filteredRows as $row) {
-            $targetVal = $row[self::TARGET_COLUMN];
             $xRow = [];
             foreach ($usedFeatures as $col) {
                 $xRow[$col] = (float) ($row[$col] ?? 0);
             }
             $X[] = $xRow;
-            $y[] = (float) $targetVal;
-            $xFullRow = [];
-            foreach (self::FEATURE_COLUMNS as $col) {
-                $xFullRow[$col] = (float) ($row[$col] ?? 0);
-            }
-            $XFull[] = $xFullRow;
+            $y[] = (float) ($row[self::TARGET_COLUMN]);
         }
 
-        if (count($usedFeatures) < 1) {
-            throw ValidationException::withMessages([
-                'rows' => ['At least one predictor column must have values.'],
-            ]);
-        }
-
-        // Remove constant columns
         [$usedFeatures, $X, $removedConstant] = $this->removeConstantColumns($usedFeatures, $X, $y);
         if (count($removedConstant) > 0) {
             $warnings[] = 'Removed constant predictors: ' . implode(', ', $removedConstant) . '.';
         }
 
-        // Remove (near-)perfectly correlated predictors
         [$usedFeatures, $X, $removedCollinear] = $this->removeCollinearPredictors($usedFeatures, $X);
         if (count($removedCollinear) > 0) {
             $warnings[] = 'Removed collinear predictors: ' . implode(', ', $removedCollinear) . '.';
         }
 
-        // Enforce validRows >= predictorsUsed + 2
+        $maxPredictors = max(1, $n - 2);
         if (count($usedFeatures) > $maxPredictors) {
             $usedFeatures = $this->reducePredictorsToFit($usedFeatures, $X, $y, $n);
             $X = array_map(fn (array $row) => array_intersect_key($row, array_flip($usedFeatures)), $X);
-            $warnings[] = 'Too many predictors for the number of rows. Kept the most relevant predictors.';
+            $warnings[] = 'Too many predictors for the number of rows. Using the ' . $maxPredictors . ' most relevant candidates.';
         }
 
         if (count($usedFeatures) < 1) {
@@ -336,20 +352,26 @@ class ModelBuilderController extends Controller
             ], 422);
         }
 
-        $p = count($usedFeatures) + 1;
-        if ($n <= $p) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Too many predictors for the number of rows. Reduce predictors or add more data rows (need at least ' . ($p + 1) . ' valid rows for ' . count($usedFeatures) . ' predictors).',
-            ], 422);
-        }
-
-        $run = function () use ($usedFeatures, $X, $y) {
-            return $this->regression->run($usedFeatures, $X, $y);
-        };
+        $dependentVarName = 'Soil Loss';
 
         try {
-            $result = $run();
+            if ($regressionMethod === 'enter') {
+                $result = $this->regression->runOlsStrict($usedFeatures, $X, $y, true, $dependentVarName);
+                $result['stepwise_mode'] = false;
+                $result['selected_predictors'] = $usedFeatures;
+                $result['step_log'] = [];
+                $result['validation'] = array_merge(
+                    $result['validation'] ?? [],
+                    [
+                        'stepwise_settings' => null,
+                        'correlations' => [],
+                        'simple_regressions' => [],
+                    ],
+                    $this->regression->buildValidationFromOlsResult($result, $X, $y, $usedFeatures)
+                );
+            } else {
+                $result = $this->regression->runStepwise($usedFeatures, $X, $y, $entryP, $removalP, $dependentVarName);
+            }
         } catch (\RuntimeException $e) {
             $msg = $e->getMessage();
             $isSingular = str_contains($msg, 'singular') || str_contains($msg, 'inverse');
@@ -376,35 +398,17 @@ class ModelBuilderController extends Controller
         if (! empty($result['ridge_used'] ?? false)) {
             $warnings[] = 'Ridge regularization was used due to multicollinearity.';
         }
-        unset($result['ridge_used']); // do not expose internal flag in equation payload
+        unset($result['ridge_used']);
 
-        $aux = null;
-        if (count($usedFeatures) < count(self::FEATURE_COLUMNS) || $n < count(self::FEATURE_COLUMNS)) {
-            try {
-                $aux = $this->regression->runRidgeBootstrap(
-                    array_values(self::FEATURE_COLUMNS),
-                    $XFull,
-                    $y,
-                    0.001,
-                    200
-                );
-                $aux['standard_errors'] = array_map(fn ($v) => round($v, 6), $aux['standard_errors']);
-                $aux['t_statistics'] = array_map(fn ($v) => round($v, 4), $aux['t_statistics']);
-                $aux['p_values'] = array_map(fn ($v) => round(max(0, min(1, $v)), 6), $aux['p_values']);
-            } catch (\Throwable $e) {
-                // Leave aux null; table will show placeholders for dropped predictors
-            }
+        $settings = $result['validation']['stepwise_settings'] ?? [];
+        if (! empty($settings) && ((float) ($settings['entry_p'] ?? 0) !== 0.05 || (float) ($settings['removal_p'] ?? 0) !== 0.10)) {
+            $warnings[] = 'Custom stepwise thresholds used (not SPSS default 0.05/0.10).';
         }
 
-        $payload = [
+        return response()->json([
             'success' => true,
             'regression' => $result,
             'warnings' => $warnings,
-        ];
-        if ($aux !== null) {
-            $payload['aux'] = $aux;
-        }
-
-        return response()->json($payload);
+        ]);
     }
 }

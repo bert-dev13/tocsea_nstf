@@ -3,13 +3,13 @@
 @section('title', 'Model Builder')
 
 @section('content')
-<div class="dashboard-hub" id="modelBuilderPage"
+<div class="dashboard-hub mb-page" id="modelBuilderPage"
     data-run-regression-url="{{ route('model-builder.run-regression') }}"
     data-saved-equations-index-url="{{ route('saved-equations.index') }}"
     data-saved-equations-store-url="{{ route('saved-equations.store') }}"
     data-saved-equations-base-url="{{ url('saved-equations') }}">
-    {{-- Page header with View Saved Equations --}}
-    <header class="dashboard-header fade-in-element">
+    {{-- Page header --}}
+    <header class="dashboard-header fade-in-element mb-page-header">
         <div class="header-card mb-header-inner">
             <div class="header-main">
                 <div>
@@ -17,8 +17,8 @@
                         <i data-lucide="box" class="lucide-icon lucide-icon-md" aria-hidden="true"></i>
                         Model Builder
                     </h1>
-                    <p class="header-location" style="color: rgba(255,255,255,0.9); font-weight: 400;">
-                        Build multiple linear regression models from coastal data
+                    <p class="header-location mb-page-desc">
+                        Build multiple linear regression models from coastal data. OLS-based engine aligned with SPSS for Stepwise and Enter methods.
                     </p>
                 </div>
             </div>
@@ -29,143 +29,198 @@
         </div>
     </header>
 
-    {{-- Input Data --}}
-    <section class="dashboard-section model-builder-section fade-in-element" id="modelSelectionInputSection">
-        <article class="mb-master-card">
-            {{-- Input Data --}}
-            <div class="mb-master-section mb-input-section">
-                <div class="mb-input-section-header">
-                    <h2 class="mb-master-section-title">Input Data</h2>
-                </div>
-                <p class="mb-input-hint">Fill in the required parameters, use <strong>Load Example</strong> for sample data, or <strong>Clear</strong> to start with an empty table.</p>
-                <div class="mb-load-example-row">
-                    <button type="button" id="btnLoadExample" class="mb-load-example-btn" aria-label="Load example dataset"
-                        title="Load example data into the table.">
-                        <i data-lucide="download" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
-                        Load Example
-                    </button>
-                    <button type="button" id="btnClearTable" class="mb-clear-table-btn" aria-label="Clear table"
-                        title="Clear all cells so you can enter new data.">
-                        <i data-lucide="eraser" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
-                        Clear
-                    </button>
-                    <span class="mb-load-example-hint">Load example data or clear the table to enter your own.</span>
-                </div>
-                <div class="mb-table-card mb-input-table-wrap" id="inputTableWrap">
-            <div class="mb-table-container">
-                <table class="mb-input-table" id="inputTable">
-                    <thead>
-                        <tr>
-                            <th class="col-num" data-th="num">#</th>
-                            <th class="col-year" data-th="Year" title="Year of the record (e.g. 2020)">Year</th>
-                            <th class="col-storm" data-th="Tropical_Depression" title="Number of tropical depressions">Trop_Depressions</th>
-                            <th class="col-storm" data-th="Tropical_Storms" title="Number of tropical storms per period">Trop_Storms</th>
-                            <th class="col-storm" data-th="Severe_Tropical_Storms" title="Number of severe tropical storms">Sev_Trop_Storms</th>
-                            <th class="col-storm" data-th="Typhoons" title="Number of typhoons">Typhoons</th>
-                            <th class="col-storm" data-th="Super_Typhoons" title="Number of super typhoons">Super_Typhoons</th>
-                            <th class="col-storm" data-th="Floods" title="Number of flood events">Floods</th>
-                            <th class="col-storm" data-th="Storm_Surges" title="Storm surge events">Storm_Surges</th>
-                            <th class="col-storm" data-th="Precipitation_mm" title="Total precipitation in mm">Precipitation_mm</th>
-                            <th class="col-infra" data-th="Seawall_m" title="Seawall length in meters">Seawall_m</th>
-                            <th class="col-infra" data-th="Vegetation_area_sqm" title="Vegetation area in m²">Veg_Area_Sqm</th>
-                            <th class="col-infra" data-th="Coastal_Elevation" title="Coastal elevation (m)">Coastal_Elevation</th>
-                            <th class="col-target" data-th="Soil_loss_sqm" title="Soil loss (target variable) in m²">Soil_Loss_Sqm <span class="required-star">*</span></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for ($i = 1; $i <= 10; $i++)
-                        <tr data-row="{{ $i }}">
-                            <td class="row-num" data-label="">{{ $i }}</td>
-                            <td data-label="Year"><input type="number" name="Year" min="1900" max="2100" step="1" placeholder="2024" class="mb-input mb-input-year" data-col="Year" aria-label="Year for row {{ $i }}" title="Year (1900–2100)"></td>
-                            <td data-label="Tropical_Depression"><input type="number" name="Tropical_Depression" min="0" step="0.01" placeholder="0" class="mb-input" data-col="Tropical_Depression" aria-label="Tropical depression"></td>
-                            <td data-label="Tropical_Storms"><input type="number" name="Tropical_Storms" min="0" step="0.01" placeholder="0" class="mb-input" data-col="Tropical_Storms" aria-label="Tropical storms"></td>
-                            <td data-label="Severe_Tropical_Storms"><input type="number" name="Severe_Tropical_Storms" min="0" step="0.01" placeholder="0" class="mb-input" data-col="Severe_Tropical_Storms"></td>
-                            <td data-label="Typhoons"><input type="number" name="Typhoons" min="0" step="0.01" placeholder="0" class="mb-input" data-col="Typhoons"></td>
-                            <td data-label="Super_Typhoons"><input type="number" name="Super_Typhoons" min="0" step="0.01" placeholder="0" class="mb-input" data-col="Super_Typhoons"></td>
-                            <td data-label="Floods"><input type="number" name="Floods" min="0" step="0.01" placeholder="0" class="mb-input" data-col="Floods"></td>
-                            <td data-label="Storm_Surges"><input type="number" name="Storm_Surges" min="0" step="0.01" placeholder="0" class="mb-input" data-col="Storm_Surges"></td>
-                            <td data-label="Precipitation_mm"><input type="number" name="Precipitation_mm" min="0" step="0.01" placeholder="0" class="mb-input" data-col="Precipitation_mm"></td>
-                            <td data-label="Seawall_m"><input type="number" name="Seawall_m" min="0" step="0.01" placeholder="0" class="mb-input" data-col="Seawall_m"></td>
-                            <td data-label="Vegetation_area_sqm"><input type="number" name="Vegetation_area_sqm" min="0" step="0.01" placeholder="0" class="mb-input" data-col="Vegetation_area_sqm"></td>
-                            <td data-label="Coastal_Elevation"><input type="number" name="Coastal_Elevation" step="0.01" placeholder="0" class="mb-input" data-col="Coastal_Elevation"></td>
-                            <td data-label="Soil_loss_sqm"><input type="number" name="Soil_loss_sqm" min="0" step="0.01" placeholder="0" class="mb-input mb-target" data-col="Soil_loss_sqm" required></td>
-                        </tr>
-                        @endfor
-                    </tbody>
-                </table>
-            </div>
-            </div>
-            <div class="mb-run-regression-row">
-                <button type="button" id="btnRunRegression" class="btn-run-regression">
-                    <i data-lucide="play" class="lucide-icon lucide-icon-md" aria-hidden="true"></i>
-                    <span>Run Regression</span>
+    {{-- Input Data section --}}
+    <section class="dashboard-section model-builder-section fade-in-element mb-section" id="inputDataSection">
+        <article class="mb-card">
+            <h2 class="mb-section-title">Input Data</h2>
+            <p class="mb-section-hint">Editable table: fill required parameters, use <strong>Load Example</strong> for sample data, or <strong>Clear</strong> to start over. <strong>Dependent variable:</strong> Soil_Loss_Sqm. <strong>Candidate predictors:</strong> all columns except Year (Year can be included via Regression Settings).</p>
+            <div class="mb-toolbar">
+                <button type="button" id="btnLoadExample" class="mb-btn mb-btn-secondary" aria-label="Load example dataset">
+                    <i data-lucide="download" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
+                    Load Example
                 </button>
-                <div id="regressionError" class="mb-error" role="alert" hidden></div>
-                <div id="regressionWarnings" class="mb-warnings" role="status" aria-live="polite" hidden></div>
+                <button type="button" id="btnClearTable" class="mb-btn mb-btn-outline" aria-label="Clear table">
+                    <i data-lucide="eraser" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
+                    Clear
+                </button>
+                <button type="button" id="btnAddRow" class="mb-btn mb-btn-outline" aria-label="Add row">
+                    <i data-lucide="plus" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
+                    Add row
+                </button>
+                <button type="button" id="btnRemoveRow" class="mb-btn mb-btn-outline" aria-label="Remove last row">
+                    <i data-lucide="minus" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
+                    Remove row
+                </button>
             </div>
+            <div class="mb-table-card" id="inputTableWrap">
+                <div class="mb-table-scroll-wrap">
+                    <table class="mb-input-table" id="inputTable" aria-label="Input data table">
+                        <thead>
+                            <tr>
+                                <th class="col-num">#</th>
+                                <th class="col-year" data-col="Year" title="Year (excluded as predictor by default)">Year</th>
+                                <th data-col="Trop_Depressions" title="Tropical depressions">Trop_Depressions</th>
+                                <th data-col="Trop_Storms" title="Tropical storms">Trop_Storms</th>
+                                <th data-col="Sev_Trop_Storms" title="Severe tropical storms">Sev_Trop_Storms</th>
+                                <th data-col="Typhoons">Typhoons</th>
+                                <th data-col="Super_Typhoons">Super_Typhoons</th>
+                                <th data-col="Floods">Floods</th>
+                                <th data-col="Storm_Surges">Storm_Surges</th>
+                                <th data-col="Precipitation_mm">Precipitation_mm</th>
+                                <th data-col="Seawall_m">Seawall_m</th>
+                                <th data-col="Veg_Area_Sqm">Veg_Area_Sqm</th>
+                                <th data-col="Coastal_Elevation">Coastal_Elevation</th>
+                                <th class="col-target" data-col="Soil_Loss_Sqm" title="Dependent variable">Soil_Loss_Sqm <span class="required-star">*</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for ($i = 1; $i <= 10; $i++)
+                            <tr data-row="{{ $i }}">
+                                <td class="row-num">{{ $i }}</td>
+                                <td><input type="number" name="Year" min="1900" max="2100" step="1" placeholder="—" class="mb-input mb-input-year" data-col="Year" aria-label="Year row {{ $i }}"></td>
+                                <td><input type="number" name="Trop_Depressions" min="0" step="any" placeholder="0" class="mb-input" data-col="Trop_Depressions" aria-label="Trop_Depressions"></td>
+                                <td><input type="number" name="Trop_Storms" min="0" step="any" placeholder="0" class="mb-input" data-col="Trop_Storms"></td>
+                                <td><input type="number" name="Sev_Trop_Storms" min="0" step="any" placeholder="0" class="mb-input" data-col="Sev_Trop_Storms"></td>
+                                <td><input type="number" name="Typhoons" min="0" step="any" placeholder="0" class="mb-input" data-col="Typhoons"></td>
+                                <td><input type="number" name="Super_Typhoons" min="0" step="any" placeholder="0" class="mb-input" data-col="Super_Typhoons"></td>
+                                <td><input type="number" name="Floods" min="0" step="any" placeholder="0" class="mb-input" data-col="Floods"></td>
+                                <td><input type="number" name="Storm_Surges" min="0" step="any" placeholder="0" class="mb-input" data-col="Storm_Surges"></td>
+                                <td><input type="number" name="Precipitation_mm" min="0" step="any" placeholder="0" class="mb-input" data-col="Precipitation_mm"></td>
+                                <td><input type="number" name="Seawall_m" min="0" step="any" placeholder="0" class="mb-input" data-col="Seawall_m"></td>
+                                <td><input type="number" name="Veg_Area_Sqm" min="0" step="any" placeholder="0" class="mb-input" data-col="Veg_Area_Sqm"></td>
+                                <td><input type="number" name="Coastal_Elevation" step="any" placeholder="0" class="mb-input" data-col="Coastal_Elevation"></td>
+                                <td><input type="number" name="Soil_Loss_Sqm" min="0" step="any" placeholder="0" class="mb-input mb-target" data-col="Soil_Loss_Sqm" required aria-label="Soil_Loss_Sqm (dependent)"></td>
+                            </tr>
+                            @endfor
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </article>
     </section>
 
-    {{-- Results --}}
-    <section class="dashboard-section model-builder-section fade-in-element" id="resultsSection" aria-live="polite">
-        <h2 class="section-title"><i data-lucide="bar-chart-2" class="lucide-icon lucide-icon-md" aria-hidden="true"></i> Regression Results</h2>
-        <div id="resultsEmpty" class="mb-results-empty" aria-hidden="true"></div>
+    {{-- Regression Settings section --}}
+    <section class="dashboard-section model-builder-section fade-in-element mb-section" id="regressionSettingsSection">
+        <article class="mb-card">
+            <h2 class="mb-section-title">Regression Settings</h2>
+            <div class="mb-settings-grid">
+                <div class="mb-setting-group">
+                    <label for="regressionMethodSelect" class="mb-label">Regression Method</label>
+                    <select id="regressionMethodSelect" class="mb-select" aria-describedby="methodHint">
+                        <option value="stepwise">Stepwise (SPSS default)</option>
+                        <option value="enter">Enter</option>
+                    </select>
+                    <p id="methodHint" class="mb-hint">Stepwise: Probability of F to Enter ≤ 0.05, to Remove ≥ 0.10. Enter: all selected predictors at once.</p>
+                </div>
+                <div id="stepwiseThresholdsWrap" class="mb-setting-group">
+                    <span class="mb-label">Stepwise thresholds</span>
+                    <div class="mb-threshold-row">
+                        <label for="entryPInput" class="mb-inline-label">Probability of F to Enter ≤</label>
+                        <input type="number" id="entryPInput" class="mb-input mb-input-num" min="0.01" max="0.5" step="0.01" value="0.05" aria-label="Entry p">
+                        <label for="removalPInput" class="mb-inline-label">to Remove ≥</label>
+                        <input type="number" id="removalPInput" class="mb-input mb-input-num" min="0.05" max="0.5" step="0.01" value="0.10" aria-label="Removal p">
+                    </div>
+                    <p id="stepwiseThresholdTag" class="mb-tag mb-tag-spss" aria-live="polite">SPSS default (0.05 / 0.10)</p>
+                </div>
+                <div class="mb-setting-group">
+                    <span class="mb-label">Dependent variable</span>
+                    <p class="mb-value" id="dependentVariableDisplay">Soil_Loss_Sqm</p>
+                </div>
+            </div>
+            <div class="mb-predictors-group">
+                <span class="mb-label">Predictors (candidate variables)</span>
+                <p class="mb-hint">Exclude Year by default; check Year to include it as a predictor.</p>
+                <div class="mb-checkbox-group" id="predictorCheckboxes">
+                    <label class="mb-checkbox-label"><input type="checkbox" class="mb-checkbox" data-predictor="Year" id="predYear"> Year</label>
+                    <label class="mb-checkbox-label"><input type="checkbox" class="mb-checkbox" data-predictor="Trop_Depressions" id="predTrop_Depressions" checked> Trop_Depressions</label>
+                    <label class="mb-checkbox-label"><input type="checkbox" class="mb-checkbox" data-predictor="Trop_Storms" id="predTrop_Storms" checked> Trop_Storms</label>
+                    <label class="mb-checkbox-label"><input type="checkbox" class="mb-checkbox" data-predictor="Sev_Trop_Storms" id="predSev_Trop_Storms" checked> Sev_Trop_Storms</label>
+                    <label class="mb-checkbox-label"><input type="checkbox" class="mb-checkbox" data-predictor="Typhoons" id="predTyphoons" checked> Typhoons</label>
+                    <label class="mb-checkbox-label"><input type="checkbox" class="mb-checkbox" data-predictor="Super_Typhoons" id="predSuper_Typhoons" checked> Super_Typhoons</label>
+                    <label class="mb-checkbox-label"><input type="checkbox" class="mb-checkbox" data-predictor="Floods" id="predFloods" checked> Floods</label>
+                    <label class="mb-checkbox-label"><input type="checkbox" class="mb-checkbox" data-predictor="Storm_Surges" id="predStorm_Surges" checked> Storm_Surges</label>
+                    <label class="mb-checkbox-label"><input type="checkbox" class="mb-checkbox" data-predictor="Precipitation_mm" id="predPrecipitation_mm" checked> Precipitation_mm</label>
+                    <label class="mb-checkbox-label"><input type="checkbox" class="mb-checkbox" data-predictor="Seawall_m" id="predSeawall_m" checked> Seawall_m</label>
+                    <label class="mb-checkbox-label"><input type="checkbox" class="mb-checkbox" data-predictor="Veg_Area_Sqm" id="predVeg_Area_Sqm" checked> Veg_Area_Sqm</label>
+                    <label class="mb-checkbox-label"><input type="checkbox" class="mb-checkbox" data-predictor="Coastal_Elevation" id="predCoastal_Elevation" checked> Coastal_Elevation</label>
+                </div>
+            </div>
+        </article>
+    </section>
+
+    {{-- Run Regression action area --}}
+    <section class="dashboard-section model-builder-section fade-in-element mb-section" id="runRegressionSection">
+        <div class="mb-run-area">
+            <button type="button" id="btnRunRegression" class="mb-btn mb-btn-primary mb-btn-run">
+                <i data-lucide="play" class="lucide-icon lucide-icon-md" aria-hidden="true"></i>
+                <span>Run Regression</span>
+            </button>
+            <div id="regressionError" class="mb-error" role="alert" hidden></div>
+            <div id="regressionWarnings" class="mb-warnings" role="status" aria-live="polite" hidden></div>
+        </div>
+    </section>
+
+    {{-- Regression Results section --}}
+    <section class="dashboard-section model-builder-section fade-in-element mb-section" id="resultsSection" aria-live="polite">
+        <h2 class="mb-section-title"><i data-lucide="bar-chart-2" class="lucide-icon lucide-icon-md" aria-hidden="true"></i> Regression Results</h2>
+        <div id="resultsEmpty" class="mb-results-empty" aria-hidden="true">Run a regression to see results.</div>
         <div id="resultsLoading" class="mb-results-loading" hidden aria-hidden="true">
             <span class="mb-spinner"></span>
             <span>Computing regression…</span>
         </div>
         <div id="resultsContent" class="mb-results-content" hidden>
-            {{-- Generated Regression Model: dynamic equation from significant predictors only --}}
-            <article class="weather-card mb-result-card mb-fade-in mb-generated-model-card" id="generatedModelCard">
-                <h2 class="mb-generated-model-title">Generated Regression Model</h2>
-                <div class="mb-p-threshold-wrap">
-                    <label for="pValueThreshold" class="mb-p-threshold-label">Significance level (p &lt;)</label>
-                    <input type="number" id="pValueThreshold" class="mb-p-threshold-input" min="0.01" max="0.5" step="0.01" value="0.05" aria-describedby="pThresholdHint">
-                    <span class="mb-p-threshold-hint" id="pThresholdHint">Only predictors with p-value below this threshold appear in the equation (default 0.05).</span>
-                </div>
+            <article class="mb-card mb-result-card" id="generatedModelCard">
+                <h3 class="mb-result-heading">Generated Regression Model</h3>
+                <p class="mb-stepwise-note" id="stepwiseNote">Final equation includes only predictors retained by the full stepwise procedure.</p>
+
                 <div id="generatedModelContent">
                     <div class="mb-equation-header">
-                        <h3 class="mb-result-title mb-equation-result-title">Final Equation</h3>
-                        <button type="button" class="mb-equation-copy-btn" id="btnCopyEquation" title="Copy equation to clipboard" aria-label="Copy equation to clipboard">
+                        <h4 class="mb-result-title">Final Equation</h4>
+                        <button type="button" class="mb-btn mb-btn-outline mb-btn-sm" id="btnCopyEquation" title="Copy equation to clipboard" aria-label="Copy equation">
                             <i data-lucide="copy" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
                             Copy
                         </button>
                     </div>
-                    <details class="mb-equation-details" open>
-                        <summary class="mb-equation-summary">Equation</summary>
-                        <div class="mb-equation-wrap">
-                            <div class="mb-equation-formatted" id="regressionEquationFormatted" aria-label="Regression equation" data-raw-equation="" role="text"></div>
-                        </div>
-                    </details>
-                    <div id="significantPredictorsWrap" class="mb-significant-predictors">
-                        <h3 class="mb-result-title">Significant Predictors</h3>
-                        <ul id="significantPredictorsList" class="mb-significant-list" aria-label="List of statistically significant predictors"></ul>
+                    <div class="mb-equation-block">
+                        <div class="mb-equation-formatted" id="regressionEquationFormatted" aria-label="Regression equation" data-raw-equation="" role="text"></div>
+                    </div>
+                    <div class="mb-significant-predictors" id="significantPredictorsWrap">
+                        <h4 class="mb-result-title">Significant Predictors</h4>
+                        <ul id="significantPredictorsList" class="mb-list" aria-label="Significant predictors"></ul>
                     </div>
                     <div class="mb-model-summary">
-                        <h3 class="mb-result-title">Model Summary</h3>
-                        <div class="mb-metrics-grid mb-model-summary-grid">
-                            <div class="mb-metric">
-                                <span class="mb-metric-label">R²</span>
-                                <span class="mb-metric-value" id="metricR2">—</span>
-                            </div>
-                            <div class="mb-metric">
-                                <span class="mb-metric-label">Adjusted R²</span>
-                                <span class="mb-metric-value" id="metricAdjR2">—</span>
-                            </div>
+                        <h4 class="mb-result-title">Model Summary</h4>
+                        <div class="mb-metrics-grid">
+                            <div class="mb-metric"><span class="mb-metric-label">R²</span><span class="mb-metric-value" id="metricR2">—</span></div>
+                            <div class="mb-metric"><span class="mb-metric-label">Adjusted R²</span><span class="mb-metric-value" id="metricAdjR2">—</span></div>
+                            <div class="mb-metric"><span class="mb-metric-label">Std. Error of Estimate</span><span class="mb-metric-value" id="metricStdErrEstimate">—</span></div>
+                            <div class="mb-metric"><span class="mb-metric-label">Model sig. (p)</span><span class="mb-metric-value" id="metricSignificancePvalue">—</span></div>
                         </div>
-                        <p id="paperStatsNote" class="mb-paper-stats-note" hidden aria-live="polite">Statistical values are based on the regression analysis reported in the research study.</p>
+                    </div>
+                    <div class="mb-anova-wrap">
+                        <h4 class="mb-result-title">ANOVA</h4>
+                        <div class="mb-table-scroll">
+                            <table class="mb-data-table mb-anova-table" id="anovaTable" aria-label="ANOVA table">
+                                <thead>
+                                    <tr><th>Source</th><th>Sum of Squares</th><th>df</th><th>Mean Square</th><th>F</th><th>Sig.</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>Regression</td><td id="anovaSSRegression">—</td><td id="anovaDfRegression">—</td><td id="anovaMSRegression">—</td><td id="anovaF">—</td><td id="anovaSig">—</td></tr>
+                                    <tr><td>Residual</td><td id="anovaSSResidual">—</td><td id="anovaDfResidual">—</td><td id="anovaMSResidual">—</td><td colspan="2"></td></tr>
+                                    <tr><td>Total</td><td id="anovaSSTotal">—</td><td id="anovaDfTotal">—</td><td colspan="3"></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
                 <div id="noSignificantPredictors" class="mb-no-significant" hidden>
-                    <p class="mb-no-significant-msg">No statistically significant predictors were identified based on the selected dataset.</p>
-                    <p class="mb-no-significant-hint">Try adding more data, using a higher significance level (e.g. 0.10), or checking predictor quality.</p>
+                    <p>No statistically significant predictors were identified for the selected dataset and settings.</p>
                 </div>
             </article>
-            <article class="weather-card mb-result-card mb-fade-in">
-                <h3 class="mb-result-title">All Coefficients</h3>
-                <div class="mb-table-scroll mb-coef-table-wrap">
-                    <table class="mb-coef-table" id="coefficientsTable">
+            <article class="mb-card mb-result-card">
+                <h4 class="mb-result-title">Coefficients</h4>
+                <div class="mb-table-scroll">
+                    <table class="mb-data-table" id="coefficientsTable">
                         <thead>
                             <tr><th>Variable</th><th>Coefficient</th><th>Std. Error</th><th>t</th><th>p-value</th><th>Significant</th></tr>
                         </thead>
@@ -173,18 +228,30 @@
                     </table>
                 </div>
             </article>
+            {{-- Developer Validation (collapsible) --}}
+            <article class="mb-card mb-validation-card" id="developerValidationCard" hidden>
+                <h4 class="mb-result-title">
+                    <button type="button" class="mb-details-toggle" id="validationToggle" aria-expanded="false" aria-controls="validationPanel" data-target="validationPanel">
+                        Developer Validation
+                    </button>
+                </h4>
+                <div id="validationPanel" class="mb-validation-panel" hidden aria-hidden="true">
+                    <p class="mb-hint">Compare line-by-line with SPSS. Shown when URL contains <code>?validation=1</code>. Full precision and matrices for debugging.</p>
+                    <div id="validationContent" class="mb-validation-content"></div>
+                </div>
+            </article>
         </div>
     </section>
 
-    {{-- Model actions - compact horizontal bar --}}
-    <section class="dashboard-section model-builder-section fade-in-element" id="modelManagementSection" aria-label="Model actions">
-        <div class="mb-management-bar">
-            <button type="button" class="mb-management-btn mb-management-primary" id="btnSaveEquation" aria-label="Save equation">
-                <i data-lucide="save" class="lucide-icon lucide-icon-sm mb-management-btn-icon" aria-hidden="true"></i>
+    {{-- Save Equation area --}}
+    <section class="dashboard-section model-builder-section fade-in-element mb-section" id="saveEquationSection" aria-label="Save equation">
+        <div class="mb-action-bar">
+            <button type="button" class="mb-btn mb-btn-primary" id="btnSaveEquation" aria-label="Save equation">
+                <i data-lucide="save" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
                 <span>Save Equation</span>
             </button>
-            <button type="button" class="mb-management-btn mb-management-outline" id="btnRunNew" aria-label="Run new calculation">
-                <i data-lucide="refresh-cw" class="lucide-icon lucide-icon-sm mb-management-btn-icon" aria-hidden="true"></i>
+            <button type="button" class="mb-btn mb-btn-outline" id="btnRunNew" aria-label="Run new calculation">
+                <i data-lucide="refresh-cw" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
                 <span>Run New Calculation</span>
             </button>
         </div>
@@ -205,7 +272,7 @@
                 </div>
                 <div class="mb-modal-field">
                     <label for="saveEquationFormula">Formula</label>
-                    <textarea id="saveEquationFormula" name="formula" readonly rows="6" class="mb-formula-readonly"></textarea>
+                    <textarea id="saveEquationFormula" name="formula" readonly rows="8" class="mb-formula-readonly"></textarea>
                 </div>
                 <div id="saveEquationFormError" class="mb-modal-error mb-modal-error-block" role="alert" hidden></div>
             </form>
@@ -232,7 +299,7 @@
                 </div>
                 <div class="mb-modal-field">
                     <label for="editEquationFormula">Formula <span class="required-star">*</span></label>
-                    <textarea id="editEquationFormula" name="formula" rows="6" class="mb-formula-editable"></textarea>
+                    <textarea id="editEquationFormula" name="formula" rows="8" class="mb-formula-editable"></textarea>
                 </div>
                 <div id="editEquationFormError" class="mb-modal-error mb-modal-error-block" role="alert" hidden></div>
             </form>
