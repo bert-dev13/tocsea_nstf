@@ -315,6 +315,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const treeRecSoilBadge = document.getElementById('treeRecSoilBadge');
     const treeRecRiskBadge = document.getElementById('treeRecRiskBadge');
     const treeRecGoalBadge = document.getElementById('treeRecGoalBadge');
+    const treeRecGroundCoverSection = document.getElementById('treeRecGroundCoverSection');
+    const treeRecGroundCoverList = document.getElementById('treeRecGroundCoverList');
+    const treeRecCoastalTreesSection = document.getElementById('treeRecCoastalTreesSection');
+    const treeRecCoastalTreesList = document.getElementById('treeRecCoastalTreesList');
+    const treeRecSpeciesSection = document.getElementById('treeRecSpeciesSection');
     const treeRecSpeciesList = document.getElementById('treeRecSpeciesList');
     const treeRecStrategyList = document.getElementById('treeRecStrategyList');
     const infoModelName = document.getElementById('infoModelName');
@@ -446,7 +451,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function populateTreeRecommendations(context) {
         if (!treeRecSection || !treeRecSoilBadge || !treeRecRiskBadge || !treeRecGoalBadge || !treeRecSpeciesList || !treeRecStrategyList) return;
-        const { soilType, riskLevel, soilLoss, hazardValues, modelName } = context;
+        const { soilType, riskLevel, soilLoss, hazardValues, modelName, impactSummary } = context;
         const soilLabel = String(soilType || 'Loamy').charAt(0).toUpperCase() + String(soilType || 'loamy').slice(1);
         const riskLabel = String(riskLevel || 'Moderate').charAt(0).toUpperCase() + String(riskLevel || 'moderate').slice(1);
 
@@ -455,7 +460,8 @@ document.addEventListener('DOMContentLoaded', () => {
         treeRecRiskBadge.textContent = riskLabel;
         treeRecRiskBadge.className = 'soil-tree-badge soil-tree-badge-risk risk-' + (riskLevel || 'moderate');
 
-        const cacheKey = JSON.stringify({ soilType, riskLevel, soilLoss, hazardValues, modelName });
+        const hv = hazardValues || {};
+        const cacheKey = JSON.stringify({ soilType, riskLevel, soilLoss, hazardValues, modelName, impactSummary });
         if (treeRecCache && treeRecCache.key === cacheKey) {
             renderTreeRecFromData(treeRecCache.data, soilType, riskLevel);
             if (treeRecSection) treeRecSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -480,8 +486,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     soil_type: soilType || 'loamy',
                     predicted_soil_loss: soilLoss,
                     risk_level: riskLevel || 'moderate',
-                    hazard_values: hazardValues || {},
+                    hazard_values: hv,
                     model_name: modelName || null,
+                    impact_summary: impactSummary || null,
+                    seawall_length: hv.Seawall_m ?? hv.seawall ?? null,
+                    precipitation: hv.Precipitation_mm ?? hv.precipitation ?? null,
+                    tropical_storms: hv.Tropical_Storms ?? hv.tropical_storm ?? null,
+                    floods: hv.Floods ?? hv.floods ?? null,
                 }),
             });
 
@@ -496,6 +507,9 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) {
             const rec = getTreeRecommendations(soilType, riskLevel);
             treeRecGoalBadge.textContent = rec.goalBadge;
+            if (treeRecGroundCoverSection) treeRecGroundCoverSection.setAttribute('hidden', '');
+            if (treeRecCoastalTreesSection) treeRecCoastalTreesSection.setAttribute('hidden', '');
+            if (treeRecSpeciesSection) treeRecSpeciesSection.removeAttribute('hidden');
             treeRecSpeciesList.innerHTML = rec.species.map((s) => `<li><strong>${escapeHtml(s.name)}</strong><span class="soil-tree-reason">${escapeHtml(s.reason)}</span></li>`).join('');
             treeRecStrategyList.innerHTML = rec.strategy.map((s) => `<li>${escapeHtml(s)}</li>`).join('');
         } finally {
@@ -512,16 +526,61 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderTreeRecFromData(data, soilType, riskLevel) {
+        const groundCover = data.ground_cover || [];
+        const coastalTrees = data.coastal_trees || [];
+        const strategyObj = data.planting_strategy || {};
         const species = data.recommended_species || [];
-        const strategy = data.planting_strategy || [];
+        const strategyArray = data.planting_strategy_array || [];
         const rec = getTreeRecommendations(soilType, riskLevel);
-        treeRecGoalBadge.textContent = species.length ? 'AI Recommendations' : rec.goalBadge;
-        treeRecSpeciesList.innerHTML = species.length
-            ? species.map((s) => `<li><strong>${escapeHtml(s.name)}</strong><span class="soil-tree-reason">${escapeHtml(s.reason)}</span></li>`).join('')
-            : rec.species.map((s) => `<li><strong>${escapeHtml(s.name)}</strong><span class="soil-tree-reason">${escapeHtml(s.reason)}</span></li>`).join('');
-        treeRecStrategyList.innerHTML = strategy.length
-            ? strategy.map((s) => `<li>${escapeHtml(s)}</li>`).join('')
-            : rec.strategy.map((s) => `<li>${escapeHtml(s)}</li>`).join('');
+
+        const hasStructured = groundCover.length > 0 || coastalTrees.length > 0;
+        treeRecGoalBadge.textContent = (hasStructured || species.length) ? 'AI Recommendations' : rec.goalBadge;
+
+        if (hasStructured) {
+            if (treeRecGroundCoverSection && treeRecGroundCoverList) {
+                if (groundCover.length > 0) {
+                    treeRecGroundCoverSection.removeAttribute('hidden');
+                    treeRecGroundCoverList.innerHTML = groundCover.map((s) => {
+                        const reason = s.reason || '';
+                        return `<li><strong>${escapeHtml(s.name)}</strong><span class="soil-tree-reason">${escapeHtml(reason)}</span></li>`;
+                    }).join('');
+                } else {
+                    treeRecGroundCoverSection.setAttribute('hidden', '');
+                    treeRecGroundCoverList.innerHTML = '';
+                }
+            }
+            if (treeRecCoastalTreesSection && treeRecCoastalTreesList) {
+                if (coastalTrees.length > 0) {
+                    treeRecCoastalTreesSection.removeAttribute('hidden');
+                    treeRecCoastalTreesList.innerHTML = coastalTrees.map((s) => {
+                        const reason = s.reason || '';
+                        return `<li><strong>${escapeHtml(s.name)}</strong><span class="soil-tree-reason">${escapeHtml(reason)}</span></li>`;
+                    }).join('');
+                } else {
+                    treeRecCoastalTreesSection.setAttribute('hidden', '');
+                    treeRecCoastalTreesList.innerHTML = '';
+                }
+            }
+            if (treeRecSpeciesSection) treeRecSpeciesSection.setAttribute('hidden', '');
+            const strategyLines = [
+                strategyObj.shoreline ? `Shoreline — ${strategyObj.shoreline}` : null,
+                strategyObj.mid_slope ? `Mid-Slope — ${strategyObj.mid_slope}` : null,
+                strategyObj.inland ? `Inland — ${strategyObj.inland}` : null,
+            ].filter(Boolean);
+            treeRecStrategyList.innerHTML = strategyLines.length > 0
+                ? strategyLines.map((s) => `<li>${escapeHtml(s)}</li>`).join('')
+                : rec.strategy.map((s) => `<li>${escapeHtml(s)}</li>`).join('');
+        } else {
+            if (treeRecGroundCoverSection) treeRecGroundCoverSection.setAttribute('hidden', '');
+            if (treeRecCoastalTreesSection) treeRecCoastalTreesSection.setAttribute('hidden', '');
+            if (treeRecSpeciesSection) treeRecSpeciesSection.removeAttribute('hidden');
+            treeRecSpeciesList.innerHTML = species.length
+                ? species.map((s) => `<li><strong>${escapeHtml(s.name)}</strong><span class="soil-tree-reason">${escapeHtml(s.reason)}</span></li>`).join('')
+                : rec.species.map((s) => `<li><strong>${escapeHtml(s.name)}</strong><span class="soil-tree-reason">${escapeHtml(s.reason)}</span></li>`).join('');
+            treeRecStrategyList.innerHTML = strategyArray.length
+                ? strategyArray.map((s) => `<li>${escapeHtml(s)}</li>`).join('')
+                : rec.strategy.map((s) => `<li>${escapeHtml(s)}</li>`).join('');
+        }
     }
 
     function areInputsEmpty() {
@@ -840,12 +899,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 floods: validated.floods,
                 soil_type: validated.soilType || '',
             };
+        const impactSummary = (impactInfo?.impact && impactInfo?.priority)
+            ? `${impactInfo.impact}. ${impactInfo.priority}.`
+            : (impactInfo?.impact || impactInfo?.priority || null);
         populateTreeRecommendations({
             soilType: validated.soilType || 'loamy',
             riskLevel: risk.level,
             soilLoss,
             hazardValues,
             modelName,
+            impactSummary,
         });
 
         // Store context for "Ask TOCSEA About This Result"

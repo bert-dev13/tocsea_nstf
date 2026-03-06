@@ -220,13 +220,31 @@
                     <span class="soil-tree-badge soil-tree-badge-risk" id="treeRecRiskBadge">—</span>
                     <span class="soil-tree-badge soil-tree-badge-goal" id="treeRecGoalBadge">—</span>
                 </div>
-                <div class="soil-tree-species-section">
+                <div class="soil-tree-species-section soil-tree-ground-cover-section" id="treeRecGroundCoverSection" hidden>
+                    <h4 class="soil-tree-subtitle soil-tree-subtitle-with-icon">
+                        <i data-lucide="leaf" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
+                        Ground Cover
+                    </h4>
+                    <ul class="soil-tree-species-list" id="treeRecGroundCoverList" role="list">
+                        {{-- Populated by JS --}}
+                    </ul>
+                </div>
+                <div class="soil-tree-species-section soil-tree-coastal-trees-section" id="treeRecCoastalTreesSection" hidden>
+                    <h4 class="soil-tree-subtitle soil-tree-subtitle-with-icon">
+                        <i data-lucide="tree-pine" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
+                        Coastal Protection Trees
+                    </h4>
+                    <ul class="soil-tree-species-list" id="treeRecCoastalTreesList" role="list">
+                        {{-- Populated by JS --}}
+                    </ul>
+                </div>
+                <div class="soil-tree-species-section" id="treeRecSpeciesSection">
                     <h4 class="soil-tree-subtitle soil-tree-subtitle-with-icon">
                         <i data-lucide="leaf" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
                         Recommended Species
                     </h4>
                     <ul class="soil-tree-species-list" id="treeRecSpeciesList" role="list">
-                        {{-- Populated by JS --}}
+                        {{-- Populated by JS when using legacy format --}}
                     </ul>
                 </div>
                 <div class="soil-tree-strategy-section">
@@ -236,7 +254,7 @@
                     </h4>
                     <div class="soil-tree-strategy-box">
                         <ul class="soil-tree-strategy-list" id="treeRecStrategyList" role="list">
-                            {{-- Populated by JS --}}
+                            {{-- Populated by JS: Shoreline — ..., Mid-Slope — ..., Inland — ... --}}
                         </ul>
                     </div>
                 </div>

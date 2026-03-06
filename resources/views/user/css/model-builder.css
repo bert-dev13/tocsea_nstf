@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    TOCSEA Model Builder - Multiple Linear Regression
    ========================================================================== */
 
@@ -208,6 +208,37 @@
 }
 
 .mb-load-example-btn:active {
+    transform: scale(0.98);
+}
+
+.mb-clear-table-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: 0.5rem 1rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    font-family: inherit;
+    color: var(--color-gray-700);
+    background: transparent;
+    border: 2px solid var(--color-gray-400);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+}
+
+.mb-clear-table-btn:hover {
+    background: var(--color-gray-100);
+    border-color: var(--color-gray-500);
+    color: var(--color-gray-900);
+}
+
+.mb-clear-table-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+}
+
+.mb-clear-table-btn:active {
     transform: scale(0.98);
 }
 
@@ -601,6 +632,32 @@
     display: none !important;
 }
 
+.mb-warnings {
+    width: 100%;
+    max-width: 100%;
+    margin-top: var(--space-md);
+    padding: var(--space-md);
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 8px;
+    color: #0369a1;
+    font-size: 0.9375rem;
+}
+
+.mb-warnings[hidden] {
+    display: none !important;
+}
+
+.mb-warnings-title {
+    margin: 0 0 0.25rem 0;
+    font-weight: 600;
+}
+
+.mb-warnings-list {
+    margin: 0;
+    padding-left: 1.25rem;
+}
+
 /* Results */
 #resultsSection {
     width: 100%;
@@ -713,6 +770,41 @@
     margin: 0 0 var(--space-md);
 }
 
+/* Sample prediction (current equation inputs + result) */
+.mb-sample-prediction-hint {
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+    margin: 0 0 var(--space-md);
+}
+
+.mb-sample-prediction-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--space-sm) var(--space-lg);
+    align-items: center;
+    margin-bottom: var(--space-md);
+    max-width: 28rem;
+}
+
+.mb-sample-prediction-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-gray-800);
+}
+
+.mb-sample-prediction-input {
+    max-width: 10rem;
+}
+
+.mb-sample-prediction-result-wrap {
+    margin: 0;
+    font-size: 0.9375rem;
+}
+
+.mb-sample-prediction-result-wrap strong {
+    color: var(--color-gray-900);
+}
+
 /* Generated Regression Model card */
 .mb-generated-model-card {
     background: linear-gradient(180deg, rgba(248, 250, 251, 0.9) 0%, var(--color-white) 100%);
@@ -728,6 +820,13 @@
     color: var(--color-gray-900);
     margin: 0 0 var(--space-lg);
     letter-spacing: -0.01em;
+}
+
+.mb-default-model-note {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    margin: 0 0 var(--space-lg);
+    font-style: italic;
 }
 
 .mb-p-threshold-wrap {

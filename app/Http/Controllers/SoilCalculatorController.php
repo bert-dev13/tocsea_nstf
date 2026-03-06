@@ -33,6 +33,11 @@ class SoilCalculatorController extends Controller
             'risk_level' => ['required', 'string', 'in:low,moderate,high,Low,Moderate,High'],
             'hazard_values' => ['required', 'array'],
             'model_name' => ['nullable', 'string', 'max:500'],
+            'impact_summary' => ['nullable', 'string', 'max:1000'],
+            'seawall_length' => ['nullable', 'numeric'],
+            'precipitation' => ['nullable', 'numeric'],
+            'tropical_storms' => ['nullable', 'numeric'],
+            'floods' => ['nullable', 'numeric'],
         ]);
 
         $context = [
@@ -41,6 +46,11 @@ class SoilCalculatorController extends Controller
             'risk_level' => $validated['risk_level'],
             'hazard_values' => $validated['hazard_values'],
             'model_name' => $validated['model_name'] ?? null,
+            'impact_summary' => $validated['impact_summary'] ?? null,
+            'seawall_length' => $validated['seawall_length'] ?? null,
+            'precipitation' => $validated['precipitation'] ?? null,
+            'tropical_storms' => $validated['tropical_storms'] ?? null,
+            'floods' => $validated['floods'] ?? null,
         ];
 
         try {

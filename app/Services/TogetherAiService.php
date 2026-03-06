@@ -43,27 +43,43 @@ Keep the answer structured, professional, and concise but informative.
 PROMPT;
 
     public const TREE_RECOMMENDATION_SYSTEM_PROMPT = <<<'PROMPT'
-You are an environmental restoration advisor. Based on soil type, erosion risk level, and hazard exposure, recommend suitable tree and vegetation species for soil stabilization and coastal protection.
+You are the TOCSEA Environmental Advisory for coastal soil erosion management. Generate tree and vegetation recommendations including estimated number of trees or plant clusters based on the predicted soil loss and other inputs provided.
 
-Rules:
-- Tailor species to soil type.
-- Consider risk level severity.
-- Include 3–6 species only.
-- Provide short reason per species.
-- Suggest planting strategy.
-- Do not repeat generic lists.
-- Avoid unsupported species for given soil conditions.
-- Keep response structured.
-- Prefer locally plausible, native, or commonly used stabilization species for Philippine coastal and inland contexts (e.g., mangroves, vetiver, talisay, nipa, bamboo, ipil-ipil).
-- Avoid recommending species that are clearly not applicable to Philippine coastal/inland contexts unless the user explicitly indicates a different location and conditions.
+ADAPT TO: Predicted Soil Loss, Soil Type, Risk Level, Storm and Flood impact, and coastal protection status.
+
+SPECIES SELECTION BY SOIL TYPE:
+- Clay: Prefer Vetiver Grass, Carabao Grass, Ipil-Ipil, Bamboo, Mangrove.
+- Sandy: Prefer Mangrove, Agoho, Coconut, Beach Grass, Bamboo.
+- Loamy: Prefer Mahogany, Bamboo, Ipil-Ipil, Vetiver Grass, Jackfruit.
+- Silty/Peaty/Chalky: Use species from the closest of Clay, Sandy, or Loamy as appropriate (e.g. Vetiver, Bamboo, Mangrove, Nipa).
+
+QUANTITY ESTIMATION (vegetation units = trees, clusters, or patches; distribute across species, round to whole numbers):
+- Soil loss 0–20,000 m²/year → 200–500 vegetation units total (low risk: smaller density).
+- Soil loss 20,000–60,000 m²/year → 500–1,200 vegetation units total (moderate density).
+- Soil loss 60,000–120,000 m²/year → 1,200–2,500 vegetation units total (intensive density).
+- Soil loss above 120,000 m²/year → 2,500+ vegetation units total.
+Scale down quantities when risk level is Low; scale up when High.
+
+RULES:
+- Do NOT mention regression formulas, calculation process, or that you are an AI model.
+- Recommend 3–5 species total: split into ground cover (grasses, ground vegetation) and coastal protection trees.
+- Each species: short benefit description and "Recommended planting: X clusters/trees" (use appropriate unit: clusters for grasses, trees for trees).
+- Prefer Philippine coastal/inland species (mangroves, vetiver, bamboo, ipil-ipil, agoho, talisay, nipa).
 
 You MUST respond with valid JSON only, no markdown or extra text. Use this exact structure:
 {
-  "recommended_species": [
-    {"name": "Species Name", "reason": "Short reason for this soil/risk context"}
+  "ground_cover": [
+    {"name": "Species Name", "reason": "Short benefit description", "recommended_planting": "e.g. 1,250 clusters"}
   ],
-  "planting_strategy": ["Strategy point 1", "Strategy point 2"],
-  "advisory_note": "Brief advisory or validation reminder"
+  "coastal_trees": [
+    {"name": "Species Name", "reason": "Short benefit description", "recommended_planting": "e.g. 380 trees"}
+  ],
+  "planting_strategy": {
+    "shoreline": "One sentence recommendation for shoreline.",
+    "mid_slope": "One sentence recommendation for mid-slope.",
+    "inland": "One sentence recommendation for inland."
+  },
+  "advisory_note": "This output is generated through an AI-based advisory system and shall not replace technical site assessment. Validation with appropriate environmental authorities is strongly advised."
 }
 PROMPT;
 
@@ -166,15 +182,27 @@ PROMPT;
     /**
      * Generate tree and vegetation recommendations based on calculation context.
      *
-     * @param  array{soil_type: string, predicted_soil_loss: string|float, risk_level: string, hazard_values: array<string, mixed>, model_name?: string}  $context
-     * @return array{recommended_species: array<int, array{name: string, reason: string}>, planting_strategy: array<int, string>, advisory_note: string}
+     * @param  array{soil_type: string, predicted_soil_loss: string|float, risk_level: string, hazard_values: array<string, mixed>, model_name?: string, impact_summary?: string, seawall_length?: float|string, precipitation?: float|string, tropical_storms?: float|string, floods?: float|string}  $context
+     * @return array{ground_cover: array, coastal_trees: array, planting_strategy: array, recommended_species: array, advisory_note: string}
      *
      * @throws \RuntimeException When API key is missing or request fails.
      */
     public function generateTreeRecommendations(array $context): array
     {
-        $userContent = 'Generate tree and vegetation recommendations for this coastal soil erosion scenario. Context JSON:' . "\n"
-            . json_encode($context, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        $h = $context['hazard_values'] ?? [];
+        $inputs = [
+            'soil_loss_result' => $context['predicted_soil_loss'] ?? 0,
+            'risk_level' => $context['risk_level'] ?? 'Moderate',
+            'soil_type' => $context['soil_type'] ?? 'loamy',
+            'seawall_length' => $context['seawall_length'] ?? $h['Seawall_m'] ?? $h['seawall'] ?? null,
+            'precipitation' => $context['precipitation'] ?? $h['Precipitation_mm'] ?? $h['precipitation'] ?? null,
+            'tropical_storms' => $context['tropical_storms'] ?? $h['Tropical_Storms'] ?? $h['tropical_storm'] ?? null,
+            'floods' => $context['floods'] ?? $h['Floods'] ?? $h['floods'] ?? null,
+            'impact_summary' => $context['impact_summary'] ?? null,
+        ];
+
+        $userContent = 'Generate tree and vegetation recommendations using these system inputs:' . "\n"
+            . json_encode($inputs, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
         $messages = [
             ['role' => 'system', 'content' => self::TREE_RECOMMENDATION_SYSTEM_PROMPT],
@@ -188,6 +216,7 @@ PROMPT;
 
     /**
      * Parse AI response into structured tree recommendation array.
+     * Supports new format (ground_cover, coastal_trees, planting_strategy object) and legacy (recommended_species, planting_strategy array).
      */
     protected function parseTreeRecommendationResponse(string $raw): array
     {
@@ -203,34 +232,97 @@ PROMPT;
             throw new \RuntimeException('Invalid AI response format. Please try again.');
         }
 
-        $species = $decoded['recommended_species'] ?? [];
-        if (! is_array($species)) {
-            $species = [];
-        }
-
-        $strategy = $decoded['planting_strategy'] ?? [];
-        if (! is_array($strategy)) {
-            $strategy = [];
-        }
-
         $advisory = $decoded['advisory_note'] ?? 'This output is generated through an AI-based advisory system and shall not replace technical site assessment. Validation with appropriate environmental authorities is strongly advised.';
         if (! is_string($advisory)) {
             $advisory = 'This output is generated through an AI-based advisory system and shall not replace technical site assessment. Validation with appropriate environmental authorities is strongly advised.';
         }
 
-        $normalized = [];
-        foreach ($species as $item) {
-            if (is_array($item) && isset($item['name']) && isset($item['reason'])) {
-                $normalized[] = [
+        $defaultStrategy = [
+            'shoreline' => 'Plant mangroves and coastal species in the intertidal zone.',
+            'mid_slope' => 'Use deep-rooted species and grasses for slope stabilization.',
+            'inland' => 'Maintain ground cover and reinforce with trees where suitable.',
+        ];
+
+        $groundCover = $decoded['ground_cover'] ?? [];
+        $coastalTrees = $decoded['coastal_trees'] ?? [];
+        $strategyObj = $decoded['planting_strategy'] ?? [];
+
+        if (! is_array($groundCover)) {
+            $groundCover = [];
+        }
+        if (! is_array($coastalTrees)) {
+            $coastalTrees = [];
+        }
+        if (! is_array($strategyObj)) {
+            $strategyObj = [];
+        }
+
+        $normalizeSpecies = function (array $items): array {
+            $out = [];
+            foreach ($items as $item) {
+                if (! is_array($item) || empty($item['name'])) {
+                    continue;
+                }
+                $reason = isset($item['reason']) ? (string) $item['reason'] : '';
+                $planting = isset($item['recommended_planting']) ? (string) $item['recommended_planting'] : '';
+                if ($planting !== '') {
+                    $reason = trim($reason . ($reason !== '' ? ' ' : '') . 'Recommended planting: ' . $planting);
+                }
+                $out[] = [
                     'name' => (string) $item['name'],
-                    'reason' => (string) $item['reason'],
+                    'reason' => $reason,
+                    'recommended_planting' => $planting,
                 ];
+            }
+            return $out;
+        };
+
+        $groundCover = $normalizeSpecies($groundCover);
+        $coastalTrees = $normalizeSpecies($coastalTrees);
+
+        $plantingStrategy = [
+            'shoreline' => isset($strategyObj['shoreline']) && is_string($strategyObj['shoreline'])
+                ? trim($strategyObj['shoreline']) : $defaultStrategy['shoreline'],
+            'mid_slope' => isset($strategyObj['mid_slope']) && is_string($strategyObj['mid_slope'])
+                ? trim($strategyObj['mid_slope']) : $defaultStrategy['mid_slope'],
+            'inland' => isset($strategyObj['inland']) && is_string($strategyObj['inland'])
+                ? trim($strategyObj['inland']) : $defaultStrategy['inland'],
+        ];
+
+        $legacySpecies = $decoded['recommended_species'] ?? [];
+        $legacyStrategy = $decoded['planting_strategy'] ?? [];
+        if (is_array($legacyStrategy) && ! isset($legacyStrategy['shoreline'])) {
+            $legacyStrategy = array_map('strval', array_values($legacyStrategy));
+        } else {
+            $legacyStrategy = [
+                'Shoreline — ' . $plantingStrategy['shoreline'],
+                'Mid-Slope — ' . $plantingStrategy['mid_slope'],
+                'Inland — ' . $plantingStrategy['inland'],
+            ];
+        }
+
+        $recommendedSpecies = [];
+        if (! empty($groundCover) || ! empty($coastalTrees)) {
+            foreach (array_merge($groundCover, $coastalTrees) as $s) {
+                $recommendedSpecies[] = ['name' => $s['name'], 'reason' => $s['reason']];
+            }
+        } else {
+            foreach (is_array($legacySpecies) ? $legacySpecies : [] as $item) {
+                if (is_array($item) && isset($item['name']) && isset($item['reason'])) {
+                    $recommendedSpecies[] = [
+                        'name' => (string) $item['name'],
+                        'reason' => (string) $item['reason'],
+                    ];
+                }
             }
         }
 
         return [
-            'recommended_species' => $normalized,
-            'planting_strategy' => array_map('strval', array_values($strategy)),
+            'ground_cover' => $groundCover,
+            'coastal_trees' => $coastalTrees,
+            'planting_strategy' => $plantingStrategy,
+            'recommended_species' => $recommendedSpecies,
+            'planting_strategy_array' => $legacyStrategy,
             'advisory_note' => $advisory,
         ];
     }

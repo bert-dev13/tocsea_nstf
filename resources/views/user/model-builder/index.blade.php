@@ -37,14 +37,19 @@
                 <div class="mb-input-section-header">
                     <h2 class="mb-master-section-title">Input Data</h2>
                 </div>
-                <p class="mb-input-hint">Fill in the required parameters or use <strong>Load Example</strong> to auto-fill all fields with realistic values.</p>
+                <p class="mb-input-hint">Fill in the required parameters, use <strong>Load Example</strong> for sample data, or <strong>Clear</strong> to start with an empty table.</p>
                 <div class="mb-load-example-row">
                     <button type="button" id="btnLoadExample" class="mb-load-example-btn" aria-label="Load example dataset"
                         title="Load example data into the table.">
                         <i data-lucide="download" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
                         Load Example
                     </button>
-                    <span class="mb-load-example-hint">Click to auto-fill the table with example values.</span>
+                    <button type="button" id="btnClearTable" class="mb-clear-table-btn" aria-label="Clear table"
+                        title="Clear all cells so you can enter new data.">
+                        <i data-lucide="eraser" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
+                        Clear
+                    </button>
+                    <span class="mb-load-example-hint">Load example data or clear the table to enter your own.</span>
                 </div>
                 <div class="mb-table-card mb-input-table-wrap" id="inputTableWrap">
             <div class="mb-table-container">
@@ -96,6 +101,7 @@
                     <span>Run Regression</span>
                 </button>
                 <div id="regressionError" class="mb-error" role="alert" hidden></div>
+                <div id="regressionWarnings" class="mb-warnings" role="status" aria-live="polite" hidden></div>
             </div>
             </div>
         </article>
@@ -148,6 +154,7 @@
                                 <span class="mb-metric-value" id="metricAdjR2">—</span>
                             </div>
                         </div>
+                        <p id="paperStatsNote" class="mb-paper-stats-note" hidden aria-live="polite">Statistical values are based on the regression analysis reported in the research study.</p>
                     </div>
                 </div>
                 <div id="noSignificantPredictors" class="mb-no-significant" hidden>
@@ -165,19 +172,6 @@
                         <tbody></tbody>
                     </table>
                 </div>
-            </article>
-            <article class="weather-card mb-result-card mb-fade-in">
-                <h3 class="mb-result-title">Metrics</h3>
-                <div class="mb-metrics-grid">
-                    <div class="mb-metric">
-                        <span class="mb-metric-label">R²</span>
-                        <span class="mb-metric-value" id="metricR2Secondary">—</span>
-                    </div>
-                </div>
-                <details class="mb-metrics-details">
-                    <summary>Advanced metrics</summary>
-                    <p class="mb-metrics-hint">R² = coefficient of determination.</p>
-                </details>
             </article>
         </div>
     </section>

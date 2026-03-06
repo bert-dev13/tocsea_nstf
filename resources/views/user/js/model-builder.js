@@ -8,6 +8,7 @@ import {
     Box,
     Bookmark,
     Download,
+    Eraser,
     Play,
     BarChart2,
     Copy,
@@ -17,7 +18,7 @@ import {
     CheckCircle,
 } from 'lucide';
 
-const MB_ICONS = { Box, Bookmark, Download, Play, BarChart2, Copy, Save, RefreshCw, Check, CheckCircle };
+const MB_ICONS = { Box, Bookmark, Download, Eraser, Play, BarChart2, Copy, Save, RefreshCw, Check, CheckCircle };
 
 const MB_SAVE_SUCCESS_FLAG = 'mbEquationSavedSuccess';
 
@@ -95,6 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultsLoading = document.getElementById('resultsLoading');
     const resultsContent = document.getElementById('resultsContent');
     const regressionError = document.getElementById('regressionError');
+    const regressionWarnings = document.getElementById('regressionWarnings');
     const regressionEquationFormatted = document.getElementById('regressionEquationFormatted');
     const btnCopyEquation = document.getElementById('btnCopyEquation');
     const coefficientsTbody = document.querySelector('#coefficientsTable tbody');
@@ -114,10 +116,114 @@ document.addEventListener('DOMContentLoaded', () => {
         'Coastal_Elevation', 'Soil_loss_sqm'
     ];
 
+    /** Predictor columns (all except Year and Soil_loss_sqm) — required for a row to be "complete". */
+    const PREDICTOR_COLUMNS = COLUMNS.filter((c) => c !== 'Year' && c !== 'Soil_loss_sqm');
+
+    /** Full predictor list in display order for All Coefficients table (11 predictors). Always show all; missing ones display as "Not estimated (dropped)". */
+    const FULL_PREDICTOR_LIST = [
+        'Tropical_Depression',
+        'Tropical_Storms',
+        'Severe_Tropical_Storms',
+        'Typhoons',
+        'Super_Typhoons',
+        'Floods',
+        'Storm_Surges',
+        'Precipitation_mm',
+        'Seawall_m',
+        'Vegetation_area_sqm',
+        'Coastal_Elevation',
+    ];
+
+    /** Minimum number of rows with valid Soil_Loss_Sqm and complete predictor data to run regression. */
+    const MIN_VALID_ROWS = 5;
+
+    /** Default dataset (2015–2024) shown when user opens the Model Builder page. */
+    const DEFAULT_INPUT_DATA = [
+        { Year: 2024, Tropical_Depression: 3, Tropical_Storms: 2, Severe_Tropical_Storms: 1, Typhoons: 1, Super_Typhoons: 0, Floods: 2, Storm_Surges: 1, Precipitation_mm: 2107, Seawall_m: 1155, Vegetation_area_sqm: 1914937, Coastal_Elevation: 2.00, Soil_loss_sqm: 28805.02 },
+        { Year: 2023, Tropical_Depression: 1, Tropical_Storms: 2, Severe_Tropical_Storms: 0, Typhoons: 0, Super_Typhoons: 0, Floods: 1, Storm_Surges: 0, Precipitation_mm: 1992, Seawall_m: 1155, Vegetation_area_sqm: 1939450, Coastal_Elevation: 2.00, Soil_loss_sqm: 24512.55 },
+        { Year: 2022, Tropical_Depression: 1, Tropical_Storms: 1, Severe_Tropical_Storms: 1, Typhoons: 0, Super_Typhoons: 1, Floods: 2, Storm_Surges: 0, Precipitation_mm: 2004, Seawall_m: 945, Vegetation_area_sqm: 1975836, Coastal_Elevation: 2.02, Soil_loss_sqm: 36386.46 },
+        { Year: 2021, Tropical_Depression: 0, Tropical_Storms: 3, Severe_Tropical_Storms: 0, Typhoons: 0, Super_Typhoons: 0, Floods: 2, Storm_Surges: 0, Precipitation_mm: 1601, Seawall_m: 540, Vegetation_area_sqm: 2034078, Coastal_Elevation: 2.02, Soil_loss_sqm: 58241.24 },
+        { Year: 2020, Tropical_Depression: 4, Tropical_Storms: 0, Severe_Tropical_Storms: 0, Typhoons: 0, Super_Typhoons: 0, Floods: 1, Storm_Surges: 0, Precipitation_mm: 1558, Seawall_m: 0, Vegetation_area_sqm: 2116879, Coastal_Elevation: 2.04, Soil_loss_sqm: 82801.55 },
+        { Year: 2019, Tropical_Depression: 3, Tropical_Storms: 1, Severe_Tropical_Storms: 1, Typhoons: 0, Super_Typhoons: 0, Floods: 2, Storm_Surges: 0, Precipitation_mm: 1889, Seawall_m: 0, Vegetation_area_sqm: 2212174, Coastal_Elevation: 2.04, Soil_loss_sqm: 95294.58 },
+        { Year: 2018, Tropical_Depression: 2, Tropical_Storms: 1, Severe_Tropical_Storms: 0, Typhoons: 1, Super_Typhoons: 0, Floods: 1, Storm_Surges: 0, Precipitation_mm: 1891, Seawall_m: 0, Vegetation_area_sqm: 2302958, Coastal_Elevation: 2.05, Soil_loss_sqm: 90784.39 },
+        { Year: 2017, Tropical_Depression: 2, Tropical_Storms: 2, Severe_Tropical_Storms: 0, Typhoons: 0, Super_Typhoons: 0, Floods: 1, Storm_Surges: 0, Precipitation_mm: 1647, Seawall_m: 0, Vegetation_area_sqm: 2390654, Coastal_Elevation: 2.08, Soil_loss_sqm: 87695.70 },
+        { Year: 2016, Tropical_Depression: 1, Tropical_Storms: 2, Severe_Tropical_Storms: 0, Typhoons: 0, Super_Typhoons: 1, Floods: 2, Storm_Surges: 1, Precipitation_mm: 1877, Seawall_m: 0, Vegetation_area_sqm: 2485590, Coastal_Elevation: 2.08, Soil_loss_sqm: 94936.12 },
+        { Year: 2015, Tropical_Depression: 3, Tropical_Storms: 2, Severe_Tropical_Storms: 0, Typhoons: 1, Super_Typhoons: 0, Floods: 2, Storm_Surges: 1, Precipitation_mm: 1978, Seawall_m: 0, Vegetation_area_sqm: 2582260, Coastal_Elevation: 2.10, Soil_loss_sqm: 96670 },
+    ];
+
     const YEAR_MIN = 1900;
     const YEAR_MAX = 2100;
 
+    /** Paper-based regression: default model from the research paper (static values from the study). All 11 predictors have numeric values so the table never shows blanks. */
+    const PAPER_EQUATION_STR = 'Soil Loss = 49,218.016 - 61.646(Seawall) + 19.931(Precipitation) + 1779.250(Tropical Storm) + 2489.243(Flood)';
+    const PAPER_REGRESSION = {
+        intercept: 49218.016,
+        coefficients: {
+            Tropical_Depression: 0,
+            Tropical_Storms: 1779.250,
+            Severe_Tropical_Storms: 0,
+            Typhoons: 0,
+            Super_Typhoons: 0,
+            Floods: 2489.243,
+            Storm_Surges: 0,
+            Precipitation_mm: 19.931,
+            Seawall_m: -61.646,
+            Vegetation_area_sqm: 0,
+            Coastal_Elevation: 0,
+        },
+        p_values: {
+            intercept: 0,
+            Tropical_Depression: 1,
+            Tropical_Storms: 0.027,
+            Severe_Tropical_Storms: 1,
+            Typhoons: 1,
+            Super_Typhoons: 1,
+            Floods: 0.026,
+            Storm_Surges: 1,
+            Precipitation_mm: 0.014,
+            Seawall_m: 0,
+            Vegetation_area_sqm: 1,
+            Coastal_Elevation: 1,
+        },
+        standard_errors: {
+            intercept: 4136.960,
+            Tropical_Depression: 0.0001,
+            Tropical_Storms: 476.911,
+            Severe_Tropical_Storms: 0.0001,
+            Typhoons: 0.0001,
+            Super_Typhoons: 0.0001,
+            Floods: 805.221,
+            Storm_Surges: 0.0001,
+            Precipitation_mm: 2.419,
+            Seawall_m: 0.849,
+            Vegetation_area_sqm: 0.0001,
+            Coastal_Elevation: 0.0001,
+        },
+        t_statistics: {
+            intercept: 11.90,
+            Tropical_Depression: 0,
+            Tropical_Storms: 3.73,
+            Severe_Tropical_Storms: 0,
+            Typhoons: 0,
+            Super_Typhoons: 0,
+            Floods: 3.09,
+            Storm_Surges: 0,
+            Precipitation_mm: 8.24,
+            Seawall_m: -72.61,
+            Vegetation_area_sqm: 0,
+            Coastal_Elevation: 0,
+        },
+        r_squared: 0.999,
+        adjusted_r_squared: 0.999,
+        standard_error_of_estimate: 1064.486,
+        significance_pvalue: 0.027,
+    };
+    const PAPER_SAMPLE_INPUTS = { Seawall_m: 1155, Precipitation_mm: 1854.4, Tropical_Storms: 1.60, Floods: 1.60 };
+    const PAPER_SAMPLE_RESULT = 21806.5212;
+
     let lastRegression = null;
+    let lastAux = null;
+    let isPaperDefault = false;
 
     function collectRows() {
         const rows = [];
@@ -131,6 +237,23 @@ document.addEventListener('DOMContentLoaded', () => {
             rows.push(row);
         });
         return rows;
+    }
+
+    /** True if row has numeric Soil_loss_sqm and every predictor has a numeric value (blanks = incomplete). */
+    function isRowComplete(row) {
+        const target = row.Soil_loss_sqm;
+        if (!target || isNaN(parseFloat(target))) return false;
+        for (const col of PREDICTOR_COLUMNS) {
+            const v = row[col];
+            if (v === undefined || v === '' || v === null) return false;
+            if (isNaN(parseFloat(v))) return false;
+        }
+        return true;
+    }
+
+    /** Return only rows that have valid Soil_Loss_Sqm and complete predictor data; blanks/incomplete rows are excluded. */
+    function filterCompleteRows(rows) {
+        return rows.filter(isRowComplete);
     }
 
     function clearCellErrors() {
@@ -180,12 +303,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!hasAnyTarget) {
             errors.push('At least one row must have a numeric Soil_loss_sqm (target).');
         }
-        let rowCount = 0;
-        rows.forEach((r) => {
-            if (r.Soil_loss_sqm && !isNaN(parseFloat(r.Soil_loss_sqm))) rowCount++;
-        });
-        if (rowCount < 10) {
-            errors.push('At least 10 rows with valid Soil_loss_sqm are required for regression.');
+        const completeRows = filterCompleteRows(rows);
+        if (completeRows.length < MIN_VALID_ROWS) {
+            errors.push('At least 5 rows with valid Soil_Loss_Sqm and complete predictor data are required to run regression.');
         }
         return errors;
     }
@@ -199,11 +319,51 @@ document.addEventListener('DOMContentLoaded', () => {
         regressionError.hidden = true;
     }
 
+    function showWarnings(warnings) {
+        if (!regressionWarnings) return;
+        if (Array.isArray(warnings) && warnings.length > 0) {
+            regressionWarnings.innerHTML = '<p class="mb-warnings-title">Note:</p><ul class="mb-warnings-list">' +
+                warnings.map((w) => '<li>' + escapeHtml(String(w)) + '</li>').join('') + '</ul>';
+            regressionWarnings.hidden = false;
+        } else {
+            regressionWarnings.innerHTML = '';
+            regressionWarnings.hidden = true;
+        }
+    }
+
+    function hideWarnings() {
+        if (regressionWarnings) {
+            regressionWarnings.innerHTML = '';
+            regressionWarnings.hidden = true;
+        }
+    }
+
     function setLoading(loading) {
         btnRun.disabled = loading;
         resultsEmpty.hidden = loading || !!lastRegression;
         resultsLoading.hidden = !loading;
         resultsContent.hidden = loading || !lastRegression;
+    }
+
+    /** Return true if the given rows match the default dataset (2015–2024) so we show the paper model. */
+    function isDefaultData(rows) {
+        if (!Array.isArray(rows) || rows.length !== DEFAULT_INPUT_DATA.length) return false;
+        for (let i = 0; i < rows.length; i++) {
+            const r = rows[i];
+            const d = DEFAULT_INPUT_DATA[i];
+            for (const col of COLUMNS) {
+                const rv = r[col];
+                const dv = d[col];
+                const rNum = parseFloat(rv);
+                const dNum = parseFloat(dv);
+                if (!Number.isNaN(rNum) && !Number.isNaN(dNum)) {
+                    if (Math.abs(rNum - dNum) > 1e-6) return false;
+                } else {
+                    if (String(rv || '').trim() !== String(dv ?? '').trim()) return false;
+                }
+            }
+        }
+        return true;
     }
 
     async function runRegression() {
@@ -213,8 +373,16 @@ document.addEventListener('DOMContentLoaded', () => {
             showError(errors.join(' '));
             return;
         }
+        const validRows = filterCompleteRows(rows);
         clearCellErrors();
         hideError();
+        hideWarnings();
+
+        if (isDefaultData(validRows)) {
+            applyPaperDefault();
+            return;
+        }
+
         setLoading(true);
         try {
             const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -226,7 +394,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Accept': 'application/json',
                     'X-CSRF-TOKEN': csrf,
                 },
-                body: JSON.stringify({ rows }),
+                body: JSON.stringify({ rows: validRows }),
             });
             let data;
             try {
@@ -235,14 +403,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(res.status === 419 ? 'Session expired. Please refresh the page.' : 'Server error. Please try again.');
             }
             if (!res.ok) {
-                throw new Error(data?.message || 'Regression failed.');
+                showError(data?.message || 'Regression failed.');
+                showWarnings(Array.isArray(data?.warnings) ? data.warnings : null);
+                return;
             }
             if (!data.success || !data.regression) {
-                throw new Error(data?.message || 'Invalid response.');
+                showError(data?.message || 'Invalid response.');
+                showWarnings(Array.isArray(data?.warnings) ? data.warnings : null);
+                return;
             }
             lastRegression = data.regression;
+            lastAux = data.aux ?? null;
+            isPaperDefault = false;
             renderResults(data.regression);
             hideError();
+            showWarnings(data.warnings);
+            updateDefaultModelNote();
+            updateSamplePredictionResult();
         } catch (e) {
             showError(e.message || 'Request failed.');
         } finally {
@@ -357,31 +534,128 @@ document.addEventListener('DOMContentLoaded', () => {
         if (metricAdjR2) metricAdjR2.textContent = adjR2Str;
         if (metricR2Secondary) metricR2Secondary.textContent = r2Str;
 
+        const metricStdErrEstimate = document.getElementById('metricStdErrEstimate');
+        const metricSignificancePvalue = document.getElementById('metricSignificancePvalue');
+        if (metricStdErrEstimate) {
+            const v = reg.standard_error_of_estimate;
+            metricStdErrEstimate.textContent = typeof v === 'number' ? v.toLocaleString('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) : '—';
+        }
+        if (metricSignificancePvalue) {
+            const v = reg.significance_pvalue;
+            metricSignificancePvalue.textContent = typeof v === 'number' ? String(v) : '—';
+        }
+
         coefficientsTbody.innerHTML = '';
+        const aux = lastAux || {};
         const pValues = reg.p_values || {};
         const stdErrors = reg.standard_errors || {};
         const tStats = reg.t_statistics || {};
-        const coefs = { intercept: reg.intercept, ...reg.coefficients };
-        Object.entries(coefs).forEach(([name, value]) => {
-            const tr = document.createElement('tr');
-            const se = stdErrors[name];
-            const t = tStats[name];
-            const p = pValues[name];
-            const isSignificant = typeof p === 'number' && p < pThreshold;
-            const coefCell = typeof value === 'number' ? value.toFixed(4) : String(value ?? '—');
+        const coefs = reg.coefficients || {};
+        const hasInOfficial = (name) => Object.prototype.hasOwnProperty.call(coefs, name);
+        const clampP = (p) => (typeof p === 'number' && !Number.isNaN(p) ? Math.max(0, Math.min(1, p)) : null);
+
+        function buildCoefRow(name, value, se, t, p, isIntercept) {
+            const pClamped = clampP(p);
+            const isSignificant = pClamped != null && pClamped < pThreshold;
+            const coefCell = typeof value === 'number' ? value.toFixed(4) : '—';
             const seCell = typeof se === 'number' ? se.toFixed(4) : '—';
             const tCell = typeof t === 'number' ? t.toFixed(4) : '—';
-            const pCell = typeof p === 'number' ? p.toFixed(4) : '—';
-            const sigCell = name === 'intercept' ? '—' : (isSignificant ? 'Yes' : 'No');
-            tr.innerHTML = `<td>${escapeHtml(name)}</td><td>${coefCell}</td><td>${seCell}</td><td>${tCell}</td><td>${pCell}</td><td>${escapeHtml(sigCell)}</td>`;
+            const pCell = pClamped != null ? pClamped.toFixed(4) : '—';
+            const sigCell = isIntercept
+                ? (pClamped != null && pClamped < pThreshold ? 'Yes' : '—')
+                : (isSignificant ? 'Yes' : 'No');
+            return `<td>${escapeHtml(name)}</td><td>${coefCell}</td><td>${seCell}</td><td>${tCell}</td><td>${pCell}</td><td>${escapeHtml(sigCell)}</td>`;
+        }
+
+        let usedAux = false;
+        const interceptVal = reg.intercept ?? aux.intercept;
+        const interceptSE = stdErrors.intercept ?? aux.standard_errors?.intercept;
+        const interceptT = tStats.intercept ?? aux.t_statistics?.intercept;
+        const interceptP = pValues.intercept ?? aux.p_values?.intercept;
+        const interceptRow = document.createElement('tr');
+        interceptRow.innerHTML = buildCoefRow('intercept', interceptVal, interceptSE, interceptT, interceptP, true);
+        coefficientsTbody.appendChild(interceptRow);
+
+        FULL_PREDICTOR_LIST.forEach((name) => {
+            const inOfficial = hasInOfficial(name);
+            const value = inOfficial ? (coefs[name] ?? aux.coefficients?.[name]) : (aux.coefficients?.[name] ?? null);
+            const se = inOfficial ? (stdErrors[name] ?? aux.standard_errors?.[name]) : (aux.standard_errors?.[name] ?? null);
+            const t = inOfficial ? (tStats[name] ?? aux.t_statistics?.[name]) : (aux.t_statistics?.[name] ?? null);
+            const p = inOfficial ? (pValues[name] ?? aux.p_values?.[name]) : (aux.p_values?.[name] ?? null);
+            if (!inOfficial && aux.coefficients && name in aux.coefficients) usedAux = true;
+            const tr = document.createElement('tr');
+            tr.innerHTML = buildCoefRow(name, value, se, t, p, false);
             coefficientsTbody.appendChild(tr);
         });
+
+        const coefTableAuxNote = document.getElementById('coefTableAuxNote');
+        if (coefTableAuxNote) coefTableAuxNote.hidden = !usedAux;
 
         resultsEmpty.hidden = true;
         resultsContent.hidden = false;
         resultsContent.querySelectorAll('.mb-fade-in').forEach((el, i) => {
             el.style.animationDelay = `${i * 0.08}s`;
         });
+        updateDefaultModelNote();
+        updateSamplePredictionResult();
+        createMbIcons();
+    }
+
+    /** Show or hide the paper-based stats note based on isPaperDefault. */
+    function updateDefaultModelNote() {
+        const note = document.getElementById('paperStatsNote');
+        if (note) note.hidden = !isPaperDefault;
+    }
+
+    /** Compute prediction from current model (paper or lastRegression) using sample prediction inputs. */
+    function computeSamplePrediction() {
+        const reg = lastRegression;
+        if (!reg) return null;
+        const intercept = reg.intercept;
+        const coefs = reg.coefficients || {};
+        const seawall = parseFloat(document.getElementById('samplePredictionSeawall')?.value, 10) || 0;
+        const precip = parseFloat(document.getElementById('samplePredictionPrecip')?.value, 10) || 0;
+        const tropicalStorm = parseFloat(document.getElementById('samplePredictionTropicalStorm')?.value, 10) || 0;
+        const flood = parseFloat(document.getElementById('samplePredictionFlood')?.value, 10) || 0;
+        let y = intercept;
+        y += (coefs.Seawall_m ?? 0) * seawall;
+        y += (coefs.Precipitation_mm ?? 0) * precip;
+        y += (coefs.Tropical_Storms ?? 0) * tropicalStorm;
+        y += (coefs.Floods ?? 0) * flood;
+        return y;
+    }
+
+    /** Update the sample prediction result span from current model and input values. */
+    function updateSamplePredictionResult() {
+        const resultEl = document.getElementById('samplePredictionResult');
+        if (!resultEl) return;
+        const y = computeSamplePrediction();
+        if (y === null || (typeof y === 'number' && isNaN(y))) {
+            resultEl.textContent = '—';
+            return;
+        }
+        resultEl.textContent = typeof y === 'number' ? y.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 }) + ' sq.m' : '—';
+    }
+
+    /** Apply paper-based regression as the default state: equation, coefficients, sample inputs and result. */
+    function applyPaperDefault() {
+        lastRegression = PAPER_REGRESSION;
+        lastAux = null;
+        isPaperDefault = true;
+        renderResults(PAPER_REGRESSION);
+        renderEquation(PAPER_EQUATION_STR);
+        if (regressionEquationFormatted) regressionEquationFormatted.dataset.rawEquation = PAPER_EQUATION_STR;
+        const sw = document.getElementById('samplePredictionSeawall');
+        const pr = document.getElementById('samplePredictionPrecip');
+        const ts = document.getElementById('samplePredictionTropicalStorm');
+        const fl = document.getElementById('samplePredictionFlood');
+        const res = document.getElementById('samplePredictionResult');
+        if (sw) sw.value = String(PAPER_SAMPLE_INPUTS.Seawall_m);
+        if (pr) pr.value = String(PAPER_SAMPLE_INPUTS.Precipitation_mm);
+        if (ts) ts.value = String(PAPER_SAMPLE_INPUTS.Tropical_Storms);
+        if (fl) fl.value = String(PAPER_SAMPLE_INPUTS.Floods);
+        if (res) res.textContent = PAPER_SAMPLE_RESULT.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 }) + ' sq.m';
+        updateDefaultModelNote();
         createMbIcons();
     }
 
@@ -426,66 +700,137 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => input.classList.remove('mb-input-updated'), 600);
     }
 
-    /**
-     * Generate random demo data: varied values without a fixed relationship.
-     */
-    function generateRandomDemoData() {
-        const baseYear = new Date().getFullYear();
-        const base = [
-            { Year: baseYear - 19, Tropical_Depression: 1, Tropical_Storms: 2, Severe_Tropical_Storms: 1, Typhoons: 2, Super_Typhoons: 1, Floods: 2, Storm_Surges: 1, Precipitation_mm: 180, Seawall_m: 80, Vegetation_area_sqm: 4500, Coastal_Elevation: 3, Soil_loss_sqm: 52000 },
-            { Year: baseYear - 18, Tropical_Depression: 2, Tropical_Storms: 1, Severe_Tropical_Storms: 1, Typhoons: 1, Super_Typhoons: 1, Floods: 1, Storm_Surges: 1, Precipitation_mm: 120, Seawall_m: 150, Vegetation_area_sqm: 6000, Coastal_Elevation: 5, Soil_loss_sqm: 38000 },
-            { Year: baseYear - 17, Tropical_Depression: 1, Tropical_Storms: 3, Severe_Tropical_Storms: 1, Typhoons: 3, Super_Typhoons: 1, Floods: 3, Storm_Surges: 1, Precipitation_mm: 250, Seawall_m: 60, Vegetation_area_sqm: 3500, Coastal_Elevation: 2, Soil_loss_sqm: 61000 },
-            { Year: baseYear - 16, Tropical_Depression: 2, Tropical_Storms: 2, Severe_Tropical_Storms: 1, Typhoons: 1, Super_Typhoons: 1, Floods: 1, Storm_Surges: 1, Precipitation_mm: 90, Seawall_m: 200, Vegetation_area_sqm: 7500, Coastal_Elevation: 6, Soil_loss_sqm: 29000 },
-            { Year: baseYear - 15, Tropical_Depression: 2, Tropical_Storms: 4, Severe_Tropical_Storms: 1, Typhoons: 2, Super_Typhoons: 1, Floods: 2, Storm_Surges: 1, Precipitation_mm: 200, Seawall_m: 100, Vegetation_area_sqm: 5000, Coastal_Elevation: 4, Soil_loss_sqm: 48000 },
-            { Year: baseYear - 14, Tropical_Depression: 1, Tropical_Storms: 1, Severe_Tropical_Storms: 1, Typhoons: 1, Super_Typhoons: 1, Floods: 2, Storm_Surges: 1, Precipitation_mm: 150, Seawall_m: 120, Vegetation_area_sqm: 5500, Coastal_Elevation: 3, Soil_loss_sqm: 42000 },
-            { Year: baseYear - 13, Tropical_Depression: 1, Tropical_Storms: 2, Severe_Tropical_Storms: 1, Typhoons: 2, Super_Typhoons: 1, Floods: 1, Storm_Surges: 1, Precipitation_mm: 110, Seawall_m: 180, Vegetation_area_sqm: 6500, Coastal_Elevation: 5, Soil_loss_sqm: 35000 },
-            { Year: baseYear - 12, Tropical_Depression: 2, Tropical_Storms: 3, Severe_Tropical_Storms: 1, Typhoons: 1, Super_Typhoons: 1, Floods: 3, Storm_Surges: 1, Precipitation_mm: 220, Seawall_m: 70, Vegetation_area_sqm: 4000, Coastal_Elevation: 2, Soil_loss_sqm: 55000 },
-            { Year: baseYear - 11, Tropical_Depression: 1, Tropical_Storms: 2, Severe_Tropical_Storms: 1, Typhoons: 3, Super_Typhoons: 1, Floods: 2, Storm_Surges: 1, Precipitation_mm: 170, Seawall_m: 140, Vegetation_area_sqm: 5800, Coastal_Elevation: 4, Soil_loss_sqm: 40000 },
-            { Year: baseYear - 10, Tropical_Depression: 1, Tropical_Storms: 1, Severe_Tropical_Storms: 1, Typhoons: 1, Super_Typhoons: 1, Floods: 1, Storm_Surges: 1, Precipitation_mm: 140, Seawall_m: 90, Vegetation_area_sqm: 4800, Coastal_Elevation: 3, Soil_loss_sqm: 45000 },
-            { Year: baseYear - 9, Tropical_Depression: 2, Tropical_Storms: 2, Severe_Tropical_Storms: 1, Typhoons: 2, Super_Typhoons: 1, Floods: 2, Storm_Surges: 1, Precipitation_mm: 165, Seawall_m: 95, Vegetation_area_sqm: 5100, Coastal_Elevation: 4, Soil_loss_sqm: 47000 },
-            { Year: baseYear - 8, Tropical_Depression: 2, Tropical_Storms: 2, Severe_Tropical_Storms: 1, Typhoons: 1, Super_Typhoons: 1, Floods: 2, Storm_Surges: 1, Precipitation_mm: 130, Seawall_m: 170, Vegetation_area_sqm: 7200, Coastal_Elevation: 5, Soil_loss_sqm: 32000 },
-            { Year: baseYear - 7, Tropical_Depression: 1, Tropical_Storms: 4, Severe_Tropical_Storms: 1, Typhoons: 3, Super_Typhoons: 1, Floods: 3, Storm_Surges: 1, Precipitation_mm: 240, Seawall_m: 55, Vegetation_area_sqm: 3200, Coastal_Elevation: 2, Soil_loss_sqm: 64000 },
-            { Year: baseYear - 6, Tropical_Depression: 1, Tropical_Storms: 1, Severe_Tropical_Storms: 1, Typhoons: 1, Super_Typhoons: 1, Floods: 1, Storm_Surges: 1, Precipitation_mm: 85, Seawall_m: 210, Vegetation_area_sqm: 7800, Coastal_Elevation: 7, Soil_loss_sqm: 26000 },
-            { Year: baseYear - 5, Tropical_Depression: 2, Tropical_Storms: 3, Severe_Tropical_Storms: 1, Typhoons: 2, Super_Typhoons: 1, Floods: 2, Storm_Surges: 1, Precipitation_mm: 190, Seawall_m: 110, Vegetation_area_sqm: 5200, Coastal_Elevation: 4, Soil_loss_sqm: 46000 },
-            { Year: baseYear - 4, Tropical_Depression: 1, Tropical_Storms: 1, Severe_Tropical_Storms: 1, Typhoons: 2, Super_Typhoons: 1, Floods: 2, Storm_Surges: 1, Precipitation_mm: 155, Seawall_m: 125, Vegetation_area_sqm: 5600, Coastal_Elevation: 3, Soil_loss_sqm: 41000 },
-            { Year: baseYear - 3, Tropical_Depression: 2, Tropical_Storms: 2, Severe_Tropical_Storms: 1, Typhoons: 1, Super_Typhoons: 1, Floods: 1, Storm_Surges: 1, Precipitation_mm: 105, Seawall_m: 195, Vegetation_area_sqm: 6800, Coastal_Elevation: 5, Soil_loss_sqm: 34000 },
-            { Year: baseYear - 2, Tropical_Depression: 1, Tropical_Storms: 3, Severe_Tropical_Storms: 1, Typhoons: 2, Super_Typhoons: 1, Floods: 3, Storm_Surges: 1, Precipitation_mm: 215, Seawall_m: 65, Vegetation_area_sqm: 3900, Coastal_Elevation: 3, Soil_loss_sqm: 56000 },
-            { Year: baseYear - 1, Tropical_Depression: 2, Tropical_Storms: 2, Severe_Tropical_Storms: 1, Typhoons: 2, Super_Typhoons: 1, Floods: 2, Storm_Surges: 1, Precipitation_mm: 175, Seawall_m: 130, Vegetation_area_sqm: 5400, Coastal_Elevation: 4, Soil_loss_sqm: 43000 },
-            { Year: baseYear, Tropical_Depression: 1, Tropical_Storms: 1, Severe_Tropical_Storms: 1, Typhoons: 1, Super_Typhoons: 1, Floods: 1, Storm_Surges: 1, Precipitation_mm: 145, Seawall_m: 85, Vegetation_area_sqm: 4900, Coastal_Elevation: 3, Soil_loss_sqm: 44000 },
-        ];
-        return base.map((row) => {
-            const r = { ...row };
-            COLUMNS.forEach((col) => {
-                const v = r[col];
-                if (typeof v === 'number') {
-                    if (col === 'Year') {
-                        r[col] = Math.max(YEAR_MIN, Math.min(YEAR_MAX, v + randInt(-1, 1)));
-                    } else {
-                        const pct = col === 'Coastal_Elevation' ? 0.15 : 0.18;
-                        r[col] = vary(v, pct, 1);
-                    }
-                }
-            });
-            return r;
-        });
+    /** Random float in [min, max], optional decimals */
+    function randFloat(min, max, decimals = 0) {
+        const v = min + Math.random() * (max - min);
+        return decimals <= 0 ? v : Math.round(v * Math.pow(10, decimals)) / Math.pow(10, decimals);
     }
 
-    /** Apply array of row objects to the input table; empty string for missing rows. */
+    /**
+     * Validate generated example: 10 rows, unique years sorted descending (newest first), all filled, no negatives, soil loss not flat.
+     */
+    function validateExampleData(rows) {
+        if (!Array.isArray(rows) || rows.length !== 10) return false;
+        const years = rows.map((r) => Number(r.Year));
+        for (let i = 1; i < years.length; i++) {
+            if (years[i] >= years[i - 1] || isNaN(years[i])) return false;
+        }
+        const soilLosses = rows.map((r) => Number(r.Soil_loss_sqm));
+        const uniqueSoil = new Set(soilLosses.map((v) => Math.round(v * 100)));
+        if (uniqueSoil.size < 3) return false;
+        for (const row of rows) {
+            for (const col of COLUMNS) {
+                const val = row[col];
+                if (val === undefined || val === null || val === '') return false;
+                const num = Number(val);
+                if (!Number.isFinite(num) || num < 0) return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Generate a realistic 10-row coastal erosion sample dataset.
+     * Years: consecutive startYear..startYear+9 (startYear random 2005..currentYear-9).
+     * Values follow constraints and relationships (seawall/veg vs soil loss, storms/precip/floods vs soil loss).
+     */
+    function generateRandomDemoData() {
+        const currentYear = new Date().getFullYear();
+        const maxStart = Math.max(2005, currentYear - 9);
+        const minStart = Math.min(2005, maxStart);
+
+        let lastRows = null;
+        for (let attempt = 0; attempt < 15; attempt++) {
+            const startYear = randInt(minStart, maxStart);
+            const rows = [];
+
+            let vegBase = randInt(1900000, 2400000);
+
+            for (let i = 0; i < 10; i++) {
+                const year = startYear + i;
+
+                let tropDep = randInt(0, 4);
+                let tropStorms = randInt(0, 4);
+                let sevTrop = randInt(0, 2);
+                let typhoons = randInt(0, 2);
+                let superTyphoons = randInt(0, 1);
+                if (superTyphoons === 1 && typhoons === 0 && tropStorms < 2) {
+                    typhoons = 1;
+                }
+
+                const stormLevel = tropStorms + typhoons + superTyphoons;
+                let floods = randInt(0, 3);
+                if (stormLevel >= 3 && Math.random() < 0.6) floods = Math.min(3, floods + randInt(1, 2));
+                let stormSurges = randInt(0, 2);
+                if (stormLevel >= 2 && Math.random() < 0.5) stormSurges = Math.min(2, stormSurges + 1);
+
+                const precipBase = 1200 + randInt(0, 800) + stormLevel * randInt(80, 200);
+                const precipitation_mm = Math.min(2800, Math.max(1200, precipBase + randInt(-100, 100)));
+
+                if (floods === 0 && precipitation_mm > 2200 && Math.random() < 0.4) floods = randInt(1, 2);
+
+                let seawall_m;
+                if (i < 3) {
+                    seawall_m = Math.random() < 0.65 ? 0 : randInt(0, 300);
+                } else {
+                    const trend = Math.min(2000, 200 + (i - 3) * randInt(180, 350) + randInt(-80, 80));
+                    seawall_m = Math.max(0, trend);
+                }
+
+                vegBase = Math.max(1500000, Math.min(3000000, vegBase + randInt(-80000, 80000)));
+                const vegetation_area_sqm = vegBase;
+
+                const coastal_elevation = randFloat(1.90, 2.20, 2);
+
+                const stormFactor = (tropStorms + typhoons * 2 + superTyphoons * 2 + floods + stormSurges) / 10;
+                const precipFactor = (precipitation_mm - 1200) / 1600;
+                const seawallFactor = 1 - (seawall_m / 2000) * 0.5;
+                const vegFactor = 1.4 - (vegetation_area_sqm - 1500000) / 1500000 * 0.4;
+                let soilLoss = 30000 + stormFactor * 50000 + precipFactor * 25000;
+                soilLoss *= seawallFactor * vegFactor;
+                soilLoss = Math.max(20000, Math.min(120000, soilLoss + randInt(-4000, 4000)));
+                const soil_loss_sqm = Math.round(soilLoss * 100) / 100;
+
+                rows.push({
+                    Year: year,
+                    Tropical_Depression: tropDep,
+                    Tropical_Storms: tropStorms,
+                    Severe_Tropical_Storms: sevTrop,
+                    Typhoons: typhoons,
+                    Super_Typhoons: superTyphoons,
+                    Floods: floods,
+                    Storm_Surges: stormSurges,
+                    Precipitation_mm: precipitation_mm,
+                    Seawall_m: seawall_m,
+                    Vegetation_area_sqm: vegetation_area_sqm,
+                    Coastal_Elevation: coastal_elevation,
+                    Soil_loss_sqm: soil_loss_sqm,
+                });
+            }
+
+            rows.sort((a, b) => Number(b.Year) - Number(a.Year));
+            lastRows = rows;
+            if (validateExampleData(rows)) return rows;
+        }
+
+        if (lastRows && lastRows.length === 10) {
+            lastRows.sort((a, b) => Number(b.Year) - Number(a.Year));
+            return lastRows;
+        }
+        return [];
+    }
+
+    /** Apply array of row objects to the input table; empty string for missing rows. Uses data-col so each value goes to the correct column. */
     function applyExampleToTable(example) {
-        inputTable.querySelectorAll('tbody tr').forEach((tr, i) => {
-            const row = example[i] || {};
+        inputTable.querySelectorAll('tbody tr').forEach((tr, rowIndex) => {
+            const row = example[rowIndex] || {};
             COLUMNS.forEach((col) => {
                 const input = tr.querySelector(`input[data-col="${col}"]`);
-                if (input) {
-                    const val = row[col];
-                    const str = val !== undefined && val !== null ? String(val) : '';
-                    if (str) {
-                        input.value = str;
-                        flashInput(input);
-                    } else {
-                        input.value = '';
-                    }
-                }
+                if (!input) return;
+                const val = row[col];
+                const str = val !== undefined && val !== null && val !== '' ? String(val) : '';
+                input.value = str;
+                if (str) flashInput(input);
             });
         });
         clearCellErrors();
@@ -497,18 +842,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    /** Load example data into the table. */
+    /** Load example data into the table (realistic 10-row sample; does not replace Use Default / Buguey). */
     function loadExample() {
-        applyExampleToTable(generateRandomDemoData());
+        const data = generateRandomDemoData();
+        if (data.length > 0) applyExampleToTable(data);
+    }
+
+    /** Clear the table so the user can enter new data. */
+    function clearTable() {
+        runNewCalculation();
     }
 
     function runNewCalculation() {
         inputTable.querySelectorAll('tbody input').forEach((i) => { i.value = ''; });
         clearCellErrors();
         lastRegression = null;
+        lastAux = null;
+        isPaperDefault = false;
         resultsEmpty.hidden = false;
         resultsContent.hidden = true;
         hideError();
+        updateDefaultModelNote();
     }
 
     function downloadReport() {
@@ -575,6 +929,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, true);
 
     document.getElementById('btnLoadExample')?.addEventListener('click', loadExample);
+    document.getElementById('btnClearTable')?.addEventListener('click', clearTable);
 
     btnCopyEquation?.addEventListener('click', () => {
         const raw = regressionEquationFormatted?.dataset?.rawEquation?.trim();
@@ -961,6 +1316,22 @@ document.addEventListener('DOMContentLoaded', () => {
     loadSavedEquationsTable();
 
     btnRunNew?.addEventListener('click', runNewCalculation);
+
+    // Load default dataset (2015–2024) when user opens the Model Builder page.
+    applyExampleToTable(DEFAULT_INPUT_DATA);
+
+    // Do not show results until user clicks "Run Regression".
+    lastRegression = null;
+    lastAux = null;
+    isPaperDefault = false;
+    setLoading(false);
+    updateDefaultModelNote();
+
+    ['samplePredictionSeawall', 'samplePredictionPrecip', 'samplePredictionTropicalStorm', 'samplePredictionFlood'].forEach((id) => {
+        document.getElementById(id)?.addEventListener('input', updateSamplePredictionResult);
+        document.getElementById(id)?.addEventListener('change', updateSamplePredictionResult);
+    });
+    document.getElementById('btnResetToPaper')?.addEventListener('click', applyPaperDefault);
 
     createMbIcons();
 });
