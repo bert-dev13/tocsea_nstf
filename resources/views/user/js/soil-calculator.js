@@ -3,35 +3,156 @@
  * Scalable model registry for prediction models + saved equations from Model Builder
  */
 
+import {
+    createIcons,
+    Calculator,
+    SlidersHorizontal,
+    AlertTriangle,
+    Layers,
+    Info,
+    RotateCcw,
+    Save,
+    Check,
+    MessageCircle,
+    TreePine,
+    Leaf,
+    CircleCheckBig,
+    TriangleAlert,
+} from 'lucide';
+
+const SOIL_ICONS = {
+    Calculator,
+    SlidersHorizontal,
+    AlertTriangle,
+    Layers,
+    Info,
+    RotateCcw,
+    Save,
+    Check,
+    MessageCircle,
+    TreePine,
+    Leaf,
+    CircleCheckBig,
+    TriangleAlert,
+};
+
+function createSoilIcons() {
+    createIcons({ icons: SOIL_ICONS, nameAttr: 'data-lucide' });
+}
+
 /**
- * Parse formula string from Model Builder (e.g. "Soil Loss = 81,610.062\n− (54.458 × Seawall_m)\n+ ...")
+ * User-friendly display labels for predictor names (key = stored name, value = label).
+ */
+const PREDICTOR_DISPLAY_LABELS = {
+    Year: 'Year',
+    Trop_Depressions: 'Tropical Depressions',
+    Trop_Storms: 'Tropical Storms',
+    Sev_Trop_Storms: 'Severe Tropical Storms',
+    Typhoons: 'Typhoons',
+    Super_Typhoons: 'Super Typhoons',
+    Floods: 'Floods',
+    Storm_Surges: 'Storm Surges',
+    Precipitation_mm: 'Precipitation (mm)',
+    Seawall_m: 'Seawall (m)',
+    Veg_Area_Sqm: 'Vegetation Area (m²)',
+    Coastal_Elevation: 'Coastal Elevation',
+};
+
+function getPredictorLabel(key) {
+    return PREDICTOR_DISPLAY_LABELS[key] || key.replace(/_/g, ' ');
+}
+
+/**
+ * Parse formula string from Model Builder.
+ * Supports:
+ * 1) New format: first line "Soil Loss = 99,393.748 − 10,065.291(Trop Depressions) + 5,089.713(Trop Storms)"
+ *    and "Final predictors: Trop_Depressions, Trop_Storms" in the text.
+ * 2) Legacy format: "Soil Loss = 81,610.062\n− (54.458 × Seawall_m)\n+ ..."
  * Returns { intercept, terms: [ { name, coefficient } ], variables: string[] } or null if parse fails.
  */
 function parseSavedFormula(formulaStr) {
     if (!formulaStr || typeof formulaStr !== 'string') return null;
     const lines = formulaStr.trim().split('\n').map((s) => s.trim()).filter(Boolean);
     if (lines.length < 1) return null;
-    const firstLine = lines[0];
-    const eqIndex = firstLine.indexOf('=');
+
+    // Extract "Final predictors: A, B, C" if present (Model Builder saved format)
+    let finalPredictors = null;
+    for (const line of lines) {
+        const match = line.match(/^Final predictors:\s*(.+)$/i);
+        if (match) {
+            finalPredictors = match[1].split(',').map((s) => s.trim()).filter(Boolean);
+            break;
+        }
+    }
+
+    // Equation line: first line or everything before "---"
+    let equationLine = lines[0];
+    if (equationLine.includes('---')) {
+        equationLine = equationLine.split('---')[0].trim();
+    }
+    const eqIndex = equationLine.indexOf('=');
     if (eqIndex === -1) return null;
-    const interceptStr = firstLine.slice(eqIndex + 1).trim().replace(/,/g, '');
-    const intercept = parseFloat(interceptStr);
+
+    const rightSide = equationLine.slice(eqIndex + 1).trim();
+
+    // Parse intercept: first number (may be at start or after leading sign/spaces)
+    const interceptMatch = rightSide.match(/^([+\−-]?)\s*([\d,.\s]+)/);
+    if (!interceptMatch) return null;
+    let intercept = parseFloat(interceptMatch[2].replace(/,/g, '').trim());
     if (Number.isNaN(intercept)) return null;
+    if (interceptMatch[1] === '−' || interceptMatch[1] === '-') intercept = -intercept;
+
+    // Match all terms: ± number(Label) — label may contain spaces
+    const termRegex = /([+\−-])\s*([\d,.\s]+)\s*\(([^)]+)\)/g;
     const terms = [];
-    const termRegex = /^([+\−-])\s*\(([\d,.\s]+)\s*×\s*(\w+)\)/;
-    for (let i = 1; i < lines.length; i++) {
-        const m = lines[i].match(termRegex);
-        if (!m) continue;
+    let m;
+    while ((m = termRegex.exec(rightSide)) !== null) {
         const sign = m[1];
         const coefStr = m[2].replace(/,/g, '').trim();
-        const varName = m[3];
+        const label = m[3].trim();
         let coef = parseFloat(coefStr);
         if (Number.isNaN(coef)) continue;
         if (sign === '−' || sign === '-') coef = -coef;
-        terms.push({ name: varName, coefficient: coef });
+        // Normalize label to key: "Trop Depressions" -> Trop_Depressions
+        const key = finalPredictors
+            ? (finalPredictors.find((p) => p.replace(/_/g, ' ') === label) || label.replace(/\s+/g, '_'))
+            : label.replace(/\s+/g, '_');
+        terms.push({ name: key, coefficient: coef });
     }
-    const variables = terms.map((t) => t.name);
-    return { intercept, terms, variables };
+
+    const variables = finalPredictors && finalPredictors.length > 0
+        ? finalPredictors
+        : terms.map((t) => t.name);
+
+    // If we have final predictors but no terms parsed from equation line, build terms from variables (coefficients unknown — can't calculate)
+    if (variables.length === 0) return null;
+    if (terms.length === 0 && variables.length > 0) {
+        // Equation line might use different format; try legacy per-line format
+        const legacyTerms = [];
+        const legacyRegex = /^([+\−-])\s*\(([\d,.\s]+)\s*×\s*(\w+)\)/;
+        for (let i = 1; i < lines.length; i++) {
+            const lm = lines[i].match(legacyRegex);
+            if (!lm) continue;
+            let coef = parseFloat(lm[2].replace(/,/g, '').trim());
+            if (Number.isNaN(coef)) continue;
+            if (lm[1] === '−' || lm[1] === '-') coef = -coef;
+            legacyTerms.push({ name: lm[3], coefficient: coef });
+        }
+        if (legacyTerms.length > 0) {
+            return { intercept, terms: legacyTerms, variables: legacyTerms.map((t) => t.name) };
+        }
+        return null;
+    }
+
+    // Build terms in variable order (use coefficient from parsed terms, 0 if missing)
+    const coefByKey = {};
+    terms.forEach((t) => { coefByKey[t.name] = t.coefficient; });
+    const orderedTerms = variables.map((key) => ({
+        name: key,
+        coefficient: coefByKey[key] != null ? coefByKey[key] : 0,
+    }));
+
+    return { intercept, terms: orderedTerms, variables };
 }
 
 function evaluateSavedFormula(parsed, values) {
@@ -284,6 +405,7 @@ function getBarWidth(level) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    createSoilIcons();
     const form = document.getElementById('soilCalculatorForm');
     if (!form) return;
 
@@ -308,6 +430,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const factorProtection = document.getElementById('factorProtection');
     const factorSoil = document.getElementById('factorSoil');
     const btnRunNew = document.getElementById('btnRunNew');
+    const btnSaveResult = document.getElementById('btnSaveResult');
+    const btnSaveResultIcon = document.getElementById('btnSaveResultIcon');
+    const btnSaveResultLabel = document.getElementById('btnSaveResultLabel');
+    const saveResultStatus = document.getElementById('saveResultStatus');
     const btnAskTocsea = document.getElementById('btnAskTocsea');
     const treeRecSection = document.getElementById('treeRecommendationSection');
     const treeRecLoading = document.getElementById('treeRecLoading');
@@ -326,10 +452,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const validationAlert = document.getElementById('soilCalculatorValidationAlert');
     const infoFormulaDisplay = document.getElementById('infoFormulaDisplay');
     const infoFormulaBreakdown = document.getElementById('infoFormulaBreakdown');
+    const resultDetailsSection = document.getElementById('resultDetailsSection');
+    const resultEquationName = document.getElementById('resultEquationName');
+    const resultCalculatedAt = document.getElementById('resultCalculatedAt');
+    const resultFormulaUsed = document.getElementById('resultFormulaUsed');
+    const resultInputValuesList = document.getElementById('resultInputValuesList');
 
     let savedEquationsList = [];
     /** Last calculation context for "Ask TOCSEA About This Result" */
     let lastCalculationContext = null;
+    /** Pending payload for explicit Save Result click */
+    let pendingSavePayload = null;
+    let pendingSaveSaved = false;
 
     function getSavedEquationsUrl() {
         const page = document.getElementById('soilCalculatorPage');
@@ -343,7 +477,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function saveCalculationToHistory(payload) {
         const url = getCalculationHistoryStoreUrl();
-        if (!url) return Promise.resolve();
+        if (!url) return Promise.resolve(false);
         const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
         return fetch(url, {
             method: 'POST',
@@ -354,7 +488,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 'X-CSRF-TOKEN': csrf || '',
             },
             body: JSON.stringify(payload),
-        }).catch(() => {});
+        }).then((res) => !!res && res.ok).catch(() => false);
     }
 
     async function loadSavedEquations() {
@@ -380,11 +514,14 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (_) {}
     }
 
+    const soilInputValuesSection = document.getElementById('soilInputValuesSection');
+
     function onSavedEquationChange() {
         const value = savedEquationSelect?.value?.trim();
         if (!value) {
             if (savedEquationDetails) savedEquationDetails.hidden = true;
             if (defaultModelFields) defaultModelFields.hidden = false;
+            if (soilInputValuesSection) soilInputValuesSection.hidden = true;
             updateInfoSection(PREDICTION_MODELS[DEFAULT_MODEL_ID]);
             return;
         }
@@ -392,6 +529,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!eq) {
             if (savedEquationDetails) savedEquationDetails.hidden = true;
             if (defaultModelFields) defaultModelFields.hidden = false;
+            if (soilInputValuesSection) soilInputValuesSection.hidden = true;
             return;
         }
         if (defaultModelFields) defaultModelFields.hidden = true;
@@ -399,17 +537,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (savedEquationNameDisplay) savedEquationNameDisplay.textContent = eq.equation_name;
         if (savedEquationFormulaDisplay) savedEquationFormulaDisplay.textContent = eq.formula || '';
         const parsed = parseSavedFormula(eq.formula);
-        savedEquationInputsWrap.innerHTML = '';
+        if (savedEquationInputsWrap) savedEquationInputsWrap.innerHTML = '';
         if (parsed && parsed.variables.length > 0) {
+            if (soilInputValuesSection) soilInputValuesSection.hidden = false;
             parsed.variables.forEach((varName) => {
                 const group = document.createElement('div');
                 group.className = 'form-group';
                 const id = 'saved_var_' + varName.replace(/\W/g, '_');
-                group.innerHTML = `<label for="${id}">${varName}</label><input type="number" id="${id}" name="saved_${varName}" data-variable="${varName}" min="-999999" step="0.01" placeholder="0"><span class="form-error" id="${id}-error" role="alert" hidden></span>`;
+                const label = getPredictorLabel(varName);
+                group.innerHTML = '<label for="' + id + '">' + escapeHtml(label) + ' <span class="form-label-required">*</span></label><input type="number" id="' + id + '" name="saved_' + escapeHtml(varName) + '" data-variable="' + escapeHtml(varName) + '" min="-999999" step="0.01" placeholder="0" required aria-required="true"><span class="form-hint" id="' + id + '-hint">Enter value for ' + escapeHtml(label) + '</span><span class="form-error" id="' + id + '-error" role="alert" hidden></span>';
                 savedEquationInputsWrap.appendChild(group);
             });
+        } else {
+            if (soilInputValuesSection) soilInputValuesSection.hidden = true;
         }
-        if (infoModelName) infoModelName.textContent = `Model: ${eq.equation_name}`;
+        if (infoModelName) infoModelName.textContent = 'Model: ' + eq.equation_name;
         if (infoFormulaDisplay) infoFormulaDisplay.textContent = eq.formula || '';
         if (infoFormulaBreakdown) infoFormulaBreakdown.innerHTML = '';
     }
@@ -523,6 +665,109 @@ document.addEventListener('DOMContentLoaded', () => {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    function setSaveStatus(message, type) {
+        if (!saveResultStatus) return;
+        saveResultStatus.textContent = message || '';
+        saveResultStatus.className = 'soil-save-status' + (type ? ' soil-save-status--' + type : '');
+    }
+
+    function setSaveButtonIcon(iconName) {
+        if (!btnSaveResult) return;
+        const currentIcon = btnSaveResult.querySelector('#btnSaveResultIcon');
+        if (!currentIcon) return;
+        const next = document.createElement('i');
+        next.id = 'btnSaveResultIcon';
+        next.className = currentIcon.className || 'lucide-icon lucide-icon-sm';
+        next.setAttribute('aria-hidden', 'true');
+        next.setAttribute('data-lucide', iconName || 'save');
+        currentIcon.replaceWith(next);
+        createSoilIcons();
+    }
+
+    function setSaveButtonVisible(visible) {
+        if (!btnSaveResult) return;
+        if (visible) btnSaveResult.removeAttribute('hidden');
+        else btnSaveResult.setAttribute('hidden', '');
+    }
+
+    function setSaveButtonEnabled(enabled) {
+        if (!btnSaveResult) return;
+        btnSaveResult.disabled = !enabled;
+        btnSaveResult.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+    }
+
+    function resetSaveUI() {
+        pendingSaveSaved = false;
+        setSaveStatus('', null);
+        setSaveButtonIcon('save');
+        if (btnSaveResultLabel) btnSaveResultLabel.textContent = 'Save Result';
+        setSaveButtonVisible(false);
+        setSaveButtonEnabled(false);
+    }
+
+    // Toast notifications (success/error)
+    const TOAST_DURATION_MS = 2800;
+    let toastDismissTimeout = null;
+
+    function showToast(message, type) {
+        const msg = String(message || '');
+        if (!msg) return;
+        let wrap = document.getElementById('soilToastWrap');
+        if (!wrap) {
+            wrap = document.createElement('div');
+            wrap.id = 'soilToastWrap';
+            wrap.className = 'soil-toast-wrap';
+            wrap.setAttribute('aria-live', 'polite');
+            wrap.setAttribute('aria-atomic', 'true');
+            document.body.appendChild(wrap);
+        }
+        let toast = wrap.querySelector('.soil-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.className = 'soil-toast';
+            wrap.appendChild(toast);
+        }
+        if (toastDismissTimeout) {
+            clearTimeout(toastDismissTimeout);
+            toastDismissTimeout = null;
+        }
+        const icon = type === 'error' ? 'triangle-alert' : 'circle-check-big';
+        toast.className = 'soil-toast soil-toast--' + (type === 'error' ? 'error' : 'success');
+        toast.innerHTML = '<i data-lucide="' + icon + '" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>' +
+            '<span class="soil-toast-text">' + escapeHtml(msg) + '</span>';
+        createSoilIcons();
+        toast.classList.remove('soil-toast--visible');
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => toast.classList.add('soil-toast--visible'));
+        });
+        toastDismissTimeout = setTimeout(() => {
+            toast.classList.remove('soil-toast--visible');
+            toastDismissTimeout = null;
+        }, TOAST_DURATION_MS);
+    }
+
+    function showCalculationDetails({ equationName, formulaUsed, inputs, calculatedAt }) {
+        if (resultDetailsSection) resultDetailsSection.removeAttribute('hidden');
+        if (resultEquationName) resultEquationName.textContent = equationName || '—';
+        if (resultCalculatedAt) resultCalculatedAt.textContent = calculatedAt || '—';
+        if (resultFormulaUsed) resultFormulaUsed.textContent = formulaUsed || '—';
+        if (resultInputValuesList) {
+            const inputLabels = {
+                soil_type: 'Soil Type',
+                seawall: 'Seawall Length (m)',
+                precipitation: 'Precipitation (mm)',
+                tropical_storm: 'Tropical Storms',
+                floods: 'Floods',
+            };
+            const entries = Object.entries(inputs || {});
+            resultInputValuesList.innerHTML = entries.map(([k, v]) => {
+                const label = inputLabels[k] || getPredictorLabel(k) || String(k).replace(/_/g, ' ');
+                const valueStr = (v === null || v === undefined || v === '') ? '—' : String(v);
+                return '<li><span class="soil-input-name">' + escapeHtml(label) + '</span><span class="soil-input-value">' + escapeHtml(valueStr) + '</span></li>';
+            }).join('');
+        }
     }
 
     function renderTreeRecFromData(data, soilType, riskLevel) {
@@ -644,7 +889,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (validationAlert) validationAlert.setAttribute('hidden', '');
     }
 
-    function showValidationAlert() {
+    function showValidationAlert(message) {
+        const msgEl = document.getElementById('soilCalculatorValidationMessage');
+        if (msgEl) msgEl.textContent = message || 'Please complete all required fields before calculating.';
         if (validationAlert) validationAlert.removeAttribute('hidden');
     }
 
@@ -654,6 +901,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 showPlaceholder();
                 resultContent.setAttribute('hidden', '');
             }
+            // Inputs changed: invalidate any previously-calculated result for saving.
+            pendingSavePayload = null;
+            pendingSaveSaved = false;
+            setSaveStatus('', null);
+            if (btnSaveResultLabel) btnSaveResultLabel.textContent = 'Save Result';
+            setSaveButtonVisible(false);
+            setSaveButtonEnabled(false);
+            if (resultDetailsSection) resultDetailsSection.setAttribute('hidden', '');
             updateSubmitButtonState();
             hideValidationAlert();
         }
@@ -712,6 +967,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     initInputWatchers();
+    resetSaveUI();
+    if (resultDetailsSection) resultDetailsSection.setAttribute('hidden', '');
 
     function clearErrors() {
         document.querySelectorAll('#soilCalculatorForm .form-error').forEach(el => {
@@ -748,29 +1005,34 @@ document.addEventListener('DOMContentLoaded', () => {
             const parsed = parseSavedFormula(eq?.formula);
             if (!parsed || !parsed.variables.length) {
                 showError('saved_equation', 'Invalid saved equation or formula.');
-                return false;
+                return { valid: false, message: 'Invalid saved equation or formula. Cannot calculate.' };
             }
             const values = {};
+            let missingPredictor = false;
             parsed.variables.forEach((varName) => {
                 const input = document.querySelector(`input[data-variable="${varName}"]`);
                 const val = input?.value?.trim();
                 const num = val === '' ? NaN : parseFloat(val);
                 if (Number.isNaN(num)) {
-                    showError(input?.id || 'saved_equation', `Enter a valid number for ${varName}.`);
+                    missingPredictor = true;
+                    showError(input?.id || 'saved_equation', 'Enter a valid number for ' + getPredictorLabel(varName) + '.');
                     valid = false;
                 } else if (num < 0) {
-                    showError(input?.id || 'saved_equation', `Enter a value of 0 or more for ${varName}.`);
+                    showError(input?.id || 'saved_equation', 'Enter a value of 0 or more for ' + getPredictorLabel(varName) + '.');
                     valid = false;
                 } else {
                     values[varName] = num;
                 }
             });
+            const validationMessage = missingPredictor
+                ? 'Please enter values for all predictors required by the selected regression equation.'
+                : null;
             if (!soilType) {
                 showError('soil_type', 'Please select a soil type.');
                 valid = false;
             }
-            if (!valid) return false;
-            return { useSaved: true, model: { name: eq.equation_name, parsed }, values, soilType };
+            if (!valid) return { valid: false, message: validationMessage };
+            return { useSaved: true, model: { name: eq.equation_name, formula: eq.formula, parsed }, values, soilType };
         }
 
         const seawall = parseFloat(document.getElementById('seawall')?.value);
@@ -797,7 +1059,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showError('soil_type', 'Please select a soil type.');
             valid = false;
         }
-        if (!valid) return false;
+        if (!valid) return { valid: false, message: null };
         const model = PREDICTION_MODELS[DEFAULT_MODEL_ID];
         return { seawall, precipitation, tropicalStorm, floods, soilType, model };
     }
@@ -805,14 +1067,22 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const validated = validateForm();
-        if (!validated) {
-            showValidationAlert();
+        if (!validated || validated.valid === false) {
+            showValidationAlert(validated?.message || null);
             const firstInvalid = form.querySelector('input.is-invalid, select.is-invalid');
             if (firstInvalid) firstInvalid.focus();
             return;
         }
 
         hideValidationAlert();
+        // Calculation should not auto-save; hide Save Result until calculation completes.
+        pendingSavePayload = null;
+        pendingSaveSaved = false;
+        setSaveStatus('', null);
+        if (btnSaveResultLabel) btnSaveResultLabel.textContent = 'Save Result';
+        setSaveButtonVisible(false);
+        setSaveButtonEnabled(false);
+
         resultLoading?.removeAttribute('hidden');
         if (submitBtn) submitBtn.disabled = true;
         resultEmpty?.setAttribute('hidden', '');
@@ -891,6 +1161,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (submitBtn) submitBtn.disabled = false;
         showResult();
 
+        const calculatedAt = new Date();
         const hazardValues = validated.useSaved && validated.values
             ? { ...validated.values, soil_type: validated.soilType || '' }
             : {
@@ -900,6 +1171,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 floods: validated.floods,
                 soil_type: validated.soilType || '',
             };
+        const formulaSnapshot = validated.useSaved && validated.model?.formula
+            ? validated.model.formula
+            : (PREDICTION_MODELS[DEFAULT_MODEL_ID]?.formulaDisplay || '');
+
+        showCalculationDetails({
+            equationName: modelName,
+            formulaUsed: formulaSnapshot,
+            inputs: hazardValues,
+            calculatedAt: calculatedAt.toLocaleString(),
+        });
         const impactSummary = (impactInfo?.impact && impactInfo?.priority)
             ? `${impactInfo.impact}. ${impactInfo.priority}.`
             : (impactInfo?.impact || impactInfo?.priority || null);
@@ -939,31 +1220,43 @@ document.addEventListener('DOMContentLoaded', () => {
             },
         };
 
+        // Prepare payload for explicit saving via "Save Result" button (do not auto-save on calculate).
         const storeUrl = getCalculationHistoryStoreUrl();
         if (storeUrl && !Number.isNaN(soilLoss)) {
-            let payload = {
+            pendingSavePayload = {
+                saved_equation_id: (validated.useSaved && validated.model?.parsed && validated.values && savedEquationSelect?.value)
+                    ? parseInt(savedEquationSelect.value, 10)
+                    : null,
                 equation_name: modelName,
-                formula_snapshot: validated.useSaved && validated.model?.formula
-                    ? validated.model.formula
-                    : (PREDICTION_MODELS[DEFAULT_MODEL_ID]?.formulaDisplay || ''),
-                inputs: {},
+                formula_snapshot: formulaSnapshot,
+                inputs: hazardValues,
                 result: soilLoss,
                 notes: null,
             };
-            if (validated.useSaved && validated.model?.parsed && validated.values) {
-                payload.saved_equation_id = savedEquationSelect?.value ? parseInt(savedEquationSelect.value, 10) : null;
-                payload.inputs = { ...validated.values, soil_type: validated.soilType || '' };
-            } else {
-                payload.saved_equation_id = null;
-                payload.inputs = {
-                    seawall: validated.seawall,
-                    precipitation: validated.precipitation,
-                    tropical_storm: validated.tropicalStorm,
-                    floods: validated.floods,
-                    soil_type: validated.soilType || '',
-                };
-            }
-            saveCalculationToHistory(payload);
+            pendingSaveSaved = false;
+            setSaveButtonVisible(true);
+            setSaveButtonEnabled(true);
+            setSaveStatus('', null);
+        }
+    });
+
+    btnSaveResult?.addEventListener('click', async () => {
+        if (!pendingSavePayload || pendingSaveSaved) return;
+        setSaveButtonEnabled(false);
+        setSaveStatus('Saving…', null);
+        const ok = await saveCalculationToHistory(pendingSavePayload);
+        if (ok) {
+            pendingSaveSaved = true;
+            if (btnSaveResultLabel) btnSaveResultLabel.textContent = 'Saved';
+            setSaveButtonIcon('check');
+            setSaveStatus('Calculation saved successfully.', 'success');
+            showToast('Calculation saved successfully.', 'success');
+            setSaveButtonEnabled(false);
+        } else {
+            setSaveButtonIcon('save');
+            setSaveStatus('Failed to save calculation. Please try again.', 'error');
+            showToast('Failed to save calculation. Please try again.', 'error');
+            setSaveButtonEnabled(true);
         }
     });
 
@@ -973,6 +1266,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (resultContent) resultContent.setAttribute('hidden', '');
         lastCalculationContext = null;
         treeRecCache = null;
+        pendingSavePayload = null;
+        resetSaveUI();
+        if (resultDetailsSection) resultDetailsSection.setAttribute('hidden', '');
     });
 
     btnAskTocsea?.addEventListener('click', () => {

@@ -43,15 +43,8 @@
                     <i data-lucide="eraser" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
                     Clear
                 </button>
-                <button type="button" id="btnAddRow" class="mb-btn mb-btn-outline" aria-label="Add row">
-                    <i data-lucide="plus" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
-                    Add row
-                </button>
-                <button type="button" id="btnRemoveRow" class="mb-btn mb-btn-outline" aria-label="Remove last row">
-                    <i data-lucide="minus" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
-                    Remove row
-                </button>
             </div>
+            <p class="mb-table-hint">Enter your dataset manually or click <strong>Load Example</strong> to populate sample data.</p>
             <div class="mb-table-card" id="inputTableWrap">
                 <div class="mb-table-scroll-wrap">
                     <table class="mb-input-table" id="inputTable" aria-label="Input data table">
@@ -78,7 +71,7 @@
                             <tr data-row="{{ $i }}">
                                 <td class="row-num">{{ $i }}</td>
                                 <td><input type="number" name="Year" min="1900" max="2100" step="1" placeholder="—" class="mb-input mb-input-year" data-col="Year" aria-label="Year row {{ $i }}"></td>
-                                <td><input type="number" name="Trop_Depressions" min="0" step="any" placeholder="0" class="mb-input" data-col="Trop_Depressions" aria-label="Trop_Depressions"></td>
+                                <td><input type="number" name="Trop_Depressions" min="0" step="any" placeholder="0" class="mb-input" data-col="Trop_Depressions"></td>
                                 <td><input type="number" name="Trop_Storms" min="0" step="any" placeholder="0" class="mb-input" data-col="Trop_Storms"></td>
                                 <td><input type="number" name="Sev_Trop_Storms" min="0" step="any" placeholder="0" class="mb-input" data-col="Sev_Trop_Storms"></td>
                                 <td><input type="number" name="Typhoons" min="0" step="any" placeholder="0" class="mb-input" data-col="Typhoons"></td>
@@ -99,53 +92,9 @@
         </article>
     </section>
 
-    {{-- Regression Settings section --}}
-    <section class="dashboard-section model-builder-section fade-in-element mb-section" id="regressionSettingsSection">
-        <article class="mb-card">
-            <h2 class="mb-section-title">Regression Settings</h2>
-            <div class="mb-settings-grid">
-                <div class="mb-setting-group">
-                    <label for="regressionMethodSelect" class="mb-label">Regression Method</label>
-                    <select id="regressionMethodSelect" class="mb-select" aria-describedby="methodHint">
-                        <option value="stepwise">Stepwise (SPSS default)</option>
-                        <option value="enter">Enter</option>
-                    </select>
-                    <p id="methodHint" class="mb-hint">Stepwise: Probability of F to Enter ≤ 0.05, to Remove ≥ 0.10. Enter: all selected predictors at once.</p>
-                </div>
-                <div id="stepwiseThresholdsWrap" class="mb-setting-group">
-                    <span class="mb-label">Stepwise thresholds</span>
-                    <div class="mb-threshold-row">
-                        <label for="entryPInput" class="mb-inline-label">Probability of F to Enter ≤</label>
-                        <input type="number" id="entryPInput" class="mb-input mb-input-num" min="0.01" max="0.5" step="0.01" value="0.05" aria-label="Entry p">
-                        <label for="removalPInput" class="mb-inline-label">to Remove ≥</label>
-                        <input type="number" id="removalPInput" class="mb-input mb-input-num" min="0.05" max="0.5" step="0.01" value="0.10" aria-label="Removal p">
-                    </div>
-                    <p id="stepwiseThresholdTag" class="mb-tag mb-tag-spss" aria-live="polite">SPSS default (0.05 / 0.10)</p>
-                </div>
-                <div class="mb-setting-group">
-                    <span class="mb-label">Dependent variable</span>
-                    <p class="mb-value" id="dependentVariableDisplay">Soil_Loss_Sqm</p>
-                </div>
-            </div>
-            <div class="mb-predictors-group">
-                <span class="mb-label">Predictors (candidate variables)</span>
-                <p class="mb-hint">Exclude Year by default; check Year to include it as a predictor.</p>
-                <div class="mb-checkbox-group" id="predictorCheckboxes">
-                    <label class="mb-checkbox-label"><input type="checkbox" class="mb-checkbox" data-predictor="Year" id="predYear"> Year</label>
-                    <label class="mb-checkbox-label"><input type="checkbox" class="mb-checkbox" data-predictor="Trop_Depressions" id="predTrop_Depressions" checked> Trop_Depressions</label>
-                    <label class="mb-checkbox-label"><input type="checkbox" class="mb-checkbox" data-predictor="Trop_Storms" id="predTrop_Storms" checked> Trop_Storms</label>
-                    <label class="mb-checkbox-label"><input type="checkbox" class="mb-checkbox" data-predictor="Sev_Trop_Storms" id="predSev_Trop_Storms" checked> Sev_Trop_Storms</label>
-                    <label class="mb-checkbox-label"><input type="checkbox" class="mb-checkbox" data-predictor="Typhoons" id="predTyphoons" checked> Typhoons</label>
-                    <label class="mb-checkbox-label"><input type="checkbox" class="mb-checkbox" data-predictor="Super_Typhoons" id="predSuper_Typhoons" checked> Super_Typhoons</label>
-                    <label class="mb-checkbox-label"><input type="checkbox" class="mb-checkbox" data-predictor="Floods" id="predFloods" checked> Floods</label>
-                    <label class="mb-checkbox-label"><input type="checkbox" class="mb-checkbox" data-predictor="Storm_Surges" id="predStorm_Surges" checked> Storm_Surges</label>
-                    <label class="mb-checkbox-label"><input type="checkbox" class="mb-checkbox" data-predictor="Precipitation_mm" id="predPrecipitation_mm" checked> Precipitation_mm</label>
-                    <label class="mb-checkbox-label"><input type="checkbox" class="mb-checkbox" data-predictor="Seawall_m" id="predSeawall_m" checked> Seawall_m</label>
-                    <label class="mb-checkbox-label"><input type="checkbox" class="mb-checkbox" data-predictor="Veg_Area_Sqm" id="predVeg_Area_Sqm" checked> Veg_Area_Sqm</label>
-                    <label class="mb-checkbox-label"><input type="checkbox" class="mb-checkbox" data-predictor="Coastal_Elevation" id="predCoastal_Elevation" checked> Coastal_Elevation</label>
-                </div>
-            </div>
-        </article>
+    {{-- Regression method note (fixed defaults) --}}
+    <section class="dashboard-section model-builder-section fade-in-element mb-section" id="regressionNoteSection">
+        <p class="mb-regression-note" aria-live="polite">Using SPSS default Stepwise Regression (Enter ≤ 0.05, Remove ≥ 0.10) with Soil_Loss_Sqm as the dependent variable.</p>
     </section>
 
     {{-- Run Regression action area --}}
@@ -195,21 +144,6 @@
                             <div class="mb-metric"><span class="mb-metric-label">Adjusted R²</span><span class="mb-metric-value" id="metricAdjR2">—</span></div>
                             <div class="mb-metric"><span class="mb-metric-label">Std. Error of Estimate</span><span class="mb-metric-value" id="metricStdErrEstimate">—</span></div>
                             <div class="mb-metric"><span class="mb-metric-label">Model sig. (p)</span><span class="mb-metric-value" id="metricSignificancePvalue">—</span></div>
-                        </div>
-                    </div>
-                    <div class="mb-anova-wrap">
-                        <h4 class="mb-result-title">ANOVA</h4>
-                        <div class="mb-table-scroll">
-                            <table class="mb-data-table mb-anova-table" id="anovaTable" aria-label="ANOVA table">
-                                <thead>
-                                    <tr><th>Source</th><th>Sum of Squares</th><th>df</th><th>Mean Square</th><th>F</th><th>Sig.</th></tr>
-                                </thead>
-                                <tbody>
-                                    <tr><td>Regression</td><td id="anovaSSRegression">—</td><td id="anovaDfRegression">—</td><td id="anovaMSRegression">—</td><td id="anovaF">—</td><td id="anovaSig">—</td></tr>
-                                    <tr><td>Residual</td><td id="anovaSSResidual">—</td><td id="anovaDfResidual">—</td><td id="anovaMSResidual">—</td><td colspan="2"></td></tr>
-                                    <tr><td>Total</td><td id="anovaSSTotal">—</td><td id="anovaDfTotal">—</td><td colspan="3"></td></tr>
-                                </tbody>
-                            </table>
                         </div>
                     </div>
                 </div>

@@ -32,7 +32,7 @@
         <h2 class="section-title"><i data-lucide="sliders-horizontal" class="lucide-icon lucide-icon-md" aria-hidden="true"></i> Enter Information</h2>
         <div class="soil-calculator-validation-alert" id="soilCalculatorValidationAlert" role="alert" aria-live="polite" hidden>
             <i data-lucide="alert-triangle" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
-            <span>Please complete all required fields before calculating.</span>
+            <span id="soilCalculatorValidationMessage">Please complete all required fields before calculating.</span>
         </div>
         <article class="weather-card soil-calculator-form-card">
             <form id="soilCalculatorForm" class="soil-calculator-form" novalidate>
@@ -55,7 +55,11 @@
                             <span class="soil-saved-formula-label">Formula</span>
                             <pre id="savedEquationFormulaDisplay" class="soil-saved-formula"></pre>
                         </div>
-                        <div id="savedEquationInputsWrap" class="soil-saved-inputs"></div>
+                        <div class="soil-input-values-section" id="soilInputValuesSection" hidden>
+                            <h3 class="soil-input-values-title">Input Values</h3>
+                            <p class="soil-input-values-hint">Enter values for each predictor used in the selected equation.</p>
+                            <div id="savedEquationInputsWrap" class="soil-saved-inputs"></div>
+                        </div>
                     </div>
                     <div id="defaultModelFields">
                     <div class="form-group">
@@ -175,11 +179,42 @@
                         </ul>
                     </div>
 
+                    {{-- Calculation Details (shown after calculation) --}}
+                    <div class="soil-result-details-section" id="resultDetailsSection" hidden>
+                        <h4 class="soil-insight-title">
+                            <i data-lucide="layers" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
+                            Calculation Details
+                        </h4>
+                        <div class="soil-result-details-grid">
+                            <div class="soil-result-detail">
+                                <span class="soil-result-detail-label">Equation</span>
+                                <span class="soil-result-detail-value" id="resultEquationName">—</span>
+                            </div>
+                            <div class="soil-result-detail">
+                                <span class="soil-result-detail-label">Calculated at</span>
+                                <span class="soil-result-detail-value" id="resultCalculatedAt">—</span>
+                            </div>
+                        </div>
+                        <div class="soil-result-detail-block">
+                            <span class="soil-result-detail-label">Formula used</span>
+                            <pre class="soil-result-formula" id="resultFormulaUsed">—</pre>
+                        </div>
+                        <div class="soil-result-detail-block">
+                            <span class="soil-result-detail-label">Input values</span>
+                            <ul class="soil-result-inputs" id="resultInputValuesList"></ul>
+                        </div>
+                    </div>
+
                     <div class="soil-result-actions">
                         <button type="button" class="soil-action-btn soil-action-secondary" id="btnRunNew">
                             <i data-lucide="rotate-ccw" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
                             Run New Calculation
                         </button>
+                        <button type="button" class="soil-action-btn soil-action-primary" id="btnSaveResult" hidden disabled aria-disabled="true">
+                            <i data-lucide="save" class="lucide-icon lucide-icon-sm" aria-hidden="true" id="btnSaveResultIcon"></i>
+                            <span id="btnSaveResultLabel">Save Result</span>
+                        </button>
+                        <span class="soil-save-status" id="saveResultStatus" role="status" aria-live="polite"></span>
                         <a href="#how-it-works" class="soil-action-btn soil-action-outline" id="btnModelDetails">
                             <i data-lucide="info" class="lucide-icon lucide-icon-sm" aria-hidden="true"></i>
                             View Model Details

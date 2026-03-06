@@ -342,7 +342,6 @@ class ModelBuilderController extends Controller
         if (count($usedFeatures) > $maxPredictors) {
             $usedFeatures = $this->reducePredictorsToFit($usedFeatures, $X, $y, $n);
             $X = array_map(fn (array $row) => array_intersect_key($row, array_flip($usedFeatures)), $X);
-            $warnings[] = 'Too many predictors for the number of rows. Using the ' . $maxPredictors . ' most relevant candidates.';
         }
 
         if (count($usedFeatures) < 1) {

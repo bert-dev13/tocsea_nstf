@@ -130,35 +130,53 @@ document.addEventListener('DOMContentLoaded', () => {
     /** Minimum number of rows with valid Soil_Loss_Sqm and complete predictor data to run regression. */
     const MIN_VALID_ROWS = 5;
 
-    function getSelectedPredictors() {
-        const checkboxes = document.querySelectorAll('.mb-checkbox[data-predictor]');
-        const selected = [];
-        checkboxes.forEach((cb) => {
-            if (cb.checked) selected.push(cb.dataset.predictor);
-        });
-        return selected.length ? selected : PREDICTOR_COLUMNS;
+    /** Number of rows to load when user clicks Load Example. */
+    const EXAMPLE_ROW_COUNT = 10;
+
+    /** Fixed defaults: Stepwise, Enter ≤ 0.05, Remove ≥ 0.10, dependent Soil_Loss_Sqm, predictors = all except Year. */
+
+    /** Random integer in [min, max] inclusive. */
+    function randInt(min, max) {
+        return Math.floor(min + Math.random() * (max - min + 1));
     }
 
-    function getRegressionMethod() {
-        const sel = document.getElementById('regressionMethodSelect');
-        return (sel && sel.value === 'enter') ? 'enter' : 'stepwise';
+    /** Random float in [min, max] with optional decimal places. */
+    function randFloat(min, max, decimals) {
+        const v = min + Math.random() * (max - min);
+        return decimals == null ? v : Math.round(v * Math.pow(10, decimals)) / Math.pow(10, decimals);
     }
 
-    function getEntryP() {
-        const el = document.getElementById('entryPInput');
-        if (!el) return 0.05;
-        const v = parseFloat(el.value, 10);
-        return (isNaN(v) || v < 0.01 || v > 0.5) ? 0.05 : v;
+    /** Generate a new random example dataset with realistic coastal variable ranges. Ensures variation for regression. */
+    function generateRandomExampleData(rowCount) {
+        const baseYear = new Date().getFullYear();
+        const rows = [];
+        const usedSoilLoss = new Set();
+        for (let i = 0; i < rowCount; i++) {
+            let soilLoss = randFloat(40000, 120000, 2);
+            while (usedSoilLoss.has(soilLoss)) {
+                soilLoss = randFloat(40000, 120000, 2);
+            }
+            usedSoilLoss.add(soilLoss);
+            rows.push({
+                Year: baseYear - i,
+                Trop_Depressions: randInt(0, 5),
+                Trop_Storms: randInt(0, 5),
+                Sev_Trop_Storms: randInt(0, 3),
+                Typhoons: randInt(0, 3),
+                Super_Typhoons: randInt(0, 2),
+                Floods: randInt(0, 4),
+                Storm_Surges: randInt(0, 3),
+                Precipitation_mm: randInt(1500, 2600),
+                Seawall_m: randInt(0, 1600),
+                Veg_Area_Sqm: randInt(1700000, 2400000),
+                Coastal_Elevation: randFloat(1.9, 2.2, 2),
+                Soil_Loss_Sqm: soilLoss,
+            });
+        }
+        return rows;
     }
 
-    function getRemovalP() {
-        const el = document.getElementById('removalPInput');
-        if (!el) return 0.10;
-        const v = parseFloat(el.value, 10);
-        return (isNaN(v) || v < 0.05 || v > 0.5) ? 0.10 : v;
-    }
-
-    /** Default dataset (2009–2018) shown when user opens the Model Builder page. */
+    /** Default dataset (2009–2018) used only as fallback when no random data; Load Example uses generateRandomExampleData. */
     const DEFAULT_INPUT_DATA = [
         { Year: 2018, Trop_Depressions: 4, Trop_Storms: 3, Sev_Trop_Storms: 1, Typhoons: 1, Super_Typhoons: 0, Floods: 2, Storm_Surges: 0, Precipitation_mm: 2365, Seawall_m: 1537, Veg_Area_Sqm: 1828043, Coastal_Elevation: 2.06, Soil_Loss_Sqm: 80045.17 },
         { Year: 2017, Trop_Depressions: 1, Trop_Storms: 2, Sev_Trop_Storms: 2, Typhoons: 2, Super_Typhoons: 0, Floods: 3, Storm_Surges: 1, Precipitation_mm: 2286, Seawall_m: 1471, Veg_Area_Sqm: 1863028, Coastal_Elevation: 1.93, Soil_Loss_Sqm: 87493.48 },
@@ -266,7 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!hasAnyTarget) {
             errors.push('At least one row must have a numeric Soil_Loss_Sqm (target).');
         }
-        const completeRows = filterCompleteRows(rows, getSelectedPredictors());
+        const completeRows = filterCompleteRows(rows, PREDICTOR_COLUMNS);
         if (completeRows.length < MIN_VALID_ROWS) {
             errors.push('At least 5 rows with valid Soil_Loss_Sqm and complete predictor data are required to run regression.');
         }
@@ -310,13 +328,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function runRegression() {
         const rows = collectRows();
-        const selectedPreds = getSelectedPredictors();
         const errors = validateRows(rows);
         if (errors.length > 0) {
             showError(errors.join(' '));
             return;
         }
-        const validRows = filterCompleteRows(rows, selectedPreds);
+        const validRows = filterCompleteRows(rows, PREDICTOR_COLUMNS);
         clearCellErrors();
         hideError();
         hideWarnings();
@@ -334,11 +351,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: JSON.stringify({
                     rows: validRows,
-                    regression_method: getRegressionMethod(),
-                    entry_p: getEntryP(),
-                    removal_p: getRemovalP(),
+                    regression_method: 'stepwise',
+                    entry_p: 0.05,
+                    removal_p: 0.10,
                     dependent_variable: 'Soil_Loss_Sqm',
-                    selected_predictors: getSelectedPredictors(),
                 }),
             });
             let data;
@@ -376,9 +392,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return n.toLocaleString('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
     }
 
-    /** Get p-value threshold for coefficient significance display (default 0.05). */
+    /** P-value threshold for coefficient significance (SPSS default 0.05). */
     function getPThreshold() {
-        return getEntryP();
+        return 0.05;
     }
 
     /**
@@ -493,22 +509,6 @@ document.addEventListener('DOMContentLoaded', () => {
             metricSignificancePvalue.textContent = typeof v === 'number' ? v.toFixed(6) : '—';
         }
 
-        const anova = reg.anova || {};
-        const fmtNum = (v) => (typeof v === 'number' && !Number.isNaN(v) ? v.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : '—');
-        const setAnova = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
-        setAnova('anovaSSRegression', fmtNum(anova.ss_regression));
-        setAnova('anovaSSResidual', fmtNum(anova.ss_residual));
-        setAnova('anovaSSTotal', fmtNum(anova.ss_total));
-        setAnova('anovaDfRegression', anova.df_regression != null ? String(anova.df_regression) : '—');
-        setAnova('anovaDfResidual', anova.df_residual != null ? String(anova.df_residual) : '—');
-        const n = Array.isArray(reg.residuals) ? reg.residuals.length : 0;
-        const dfTotal = n > 0 ? n - 1 : '—';
-        setAnova('anovaDfTotal', typeof dfTotal === 'number' ? String(dfTotal) : dfTotal);
-        setAnova('anovaMSRegression', fmtNum(anova.ms_regression));
-        setAnova('anovaMSResidual', fmtNum(anova.ms_residual));
-        setAnova('anovaF', fmtNum(anova.F));
-        setAnova('anovaSig', typeof anova.p_value === 'number' ? String(anova.p_value) : '—');
-
         const stepLogWrap = document.getElementById('stepLogWrap');
         const stepLogList = document.getElementById('stepLogList');
         if (stepLogWrap && stepLogList && Array.isArray(reg.step_log)) {
@@ -556,16 +556,6 @@ document.addEventListener('DOMContentLoaded', () => {
             stepLogWrap.hidden = true;
         }
 
-        const settings = reg.validation?.stepwise_settings;
-        const stepwiseThresholdTag = document.getElementById('stepwiseThresholdTag');
-        if (stepwiseThresholdTag && settings) {
-            const ep = settings.entry_p;
-            const rp = settings.removal_p;
-            const isSpss = (typeof ep === 'number' && Math.abs(ep - 0.05) < 1e-6 && typeof rp === 'number' && Math.abs(rp - 0.10) < 1e-6);
-            stepwiseThresholdTag.textContent = isSpss ? 'SPSS default (0.05 / 0.10)' : 'Custom (' + ep + ' / ' + rp + ')';
-            stepwiseThresholdTag.classList.toggle('mb-tag-spss', isSpss);
-            stepwiseThresholdTag.classList.toggle('mb-tag-custom', !isSpss);
-        }
 
         const developerValidationCard = document.getElementById('developerValidationCard');
         const validationContent = document.getElementById('validationContent');
@@ -854,12 +844,61 @@ document.addEventListener('DOMContentLoaded', () => {
         return [];
     }
 
+    /** Set the table to exactly targetRows rows (remove excess from end, or add if fewer). */
+    function setTableRowCountExactly(targetRows) {
+        const tbody = inputTable?.querySelector('tbody');
+        if (!tbody) return;
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        if (rows.length > targetRows) {
+            rows.slice(targetRows).forEach((tr) => tr.remove());
+        }
+        ensureTableRowCount(targetRows);
+        renumberTableRows();
+    }
+
+    /** Ensure the table has at least minRows rows; adds rows if needed. */
+    function ensureTableRowCount(minRows) {
+        const tbody = inputTable?.querySelector('tbody');
+        if (!tbody) return;
+        const rows = tbody.querySelectorAll('tr');
+        let need = minRows - rows.length;
+        while (need > 0) {
+            const nextNum = rows.length + 1;
+            const tr = document.createElement('tr');
+            tr.setAttribute('data-row', String(nextNum));
+            tr.innerHTML = '<td class="row-num">' + nextNum + '</td>' + COLUMNS.map((col) => {
+                const cls = col === 'Year' ? 'mb-input mb-input-year' : (col === 'Soil_Loss_Sqm' ? 'mb-input mb-target' : 'mb-input');
+                const attrs = col === 'Year' ? ' min="1900" max="2100" step="1" placeholder="—"' : ' min="0" step="any" placeholder="0"';
+                const req = col === 'Soil_Loss_Sqm' ? ' required' : '';
+                return '<td><input type="number" name="' + escapeHtml(col) + '" class="' + cls + '" data-col="' + escapeHtml(col) + '"' + attrs + req + '></td>';
+            }).join('');
+            tbody.appendChild(tr);
+            need--;
+        }
+    }
+
+    /** Renumber the # column and data-row for all rows in the table (1-based). */
+    function renumberTableRows() {
+        const tbody = inputTable?.querySelector('tbody');
+        if (!tbody) return;
+        tbody.querySelectorAll('tr').forEach((r, i) => {
+            const numCell = r.querySelector('.row-num');
+            if (numCell) numCell.textContent = i + 1;
+            r.setAttribute('data-row', String(i + 1));
+        });
+    }
+
     /** Apply array of row objects to the input table; empty string for missing rows. Uses data-col so each value goes to the correct column. */
     function applyExampleToTable(example) {
-        inputTable.querySelectorAll('tbody tr').forEach((tr, rowIndex) => {
-            const row = example[rowIndex] || {};
+        if (!inputTable || !Array.isArray(example) || example.length === 0) return;
+        ensureTableRowCount(example.length);
+        renumberTableRows();
+        const trs = inputTable.querySelectorAll('tbody tr');
+        example.forEach((row, rowIndex) => {
+            const tr = trs[rowIndex];
+            if (!tr) return;
             COLUMNS.forEach((col) => {
-                const input = tr.querySelector(`input[data-col="${col}"]`);
+                const input = tr.querySelector('input[data-col="' + col + '"]');
                 if (!input) return;
                 const val = row[col];
                 const str = val !== undefined && val !== null && val !== '' ? String(val) : '';
@@ -874,12 +913,20 @@ document.addEventListener('DOMContentLoaded', () => {
             inputTableWrap.classList.add('mb-load-animate');
             setTimeout(() => inputTableWrap.classList.remove('mb-load-animate'), 500);
         }
+        createMbIcons();
     }
 
-    /** Load example data into the table (realistic 10-row sample; does not replace Use Default / Buguey). */
+    /** Load example data into the table (only when user clicks Load Example). New random dataset each time. */
     function loadExample() {
-        const data = generateRandomDemoData();
-        if (data.length > 0) applyExampleToTable(data);
+        setTableRowCountExactly(EXAMPLE_ROW_COUNT);
+        const exampleData = generateRandomExampleData(EXAMPLE_ROW_COUNT);
+        applyExampleToTable(exampleData);
+        lastRegression = null;
+        lastAux = null;
+        resultsEmpty.hidden = false;
+        resultsContent.hidden = true;
+        hideError();
+        showToast('New example dataset loaded.');
     }
 
     /** Clear the table so the user can enter new data. */
@@ -963,61 +1010,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btnLoadExample')?.addEventListener('click', loadExample);
     document.getElementById('btnClearTable')?.addEventListener('click', clearTable);
 
-    document.getElementById('btnAddRow')?.addEventListener('click', () => {
-        const tbody = inputTable?.querySelector('tbody');
-        if (!tbody) return;
-        const rows = tbody.querySelectorAll('tr');
-        const lastRow = rows[rows.length - 1];
-        const nextNum = lastRow ? parseInt(lastRow.getAttribute('data-row') || '0', 10) + 1 : 1;
-        const tr = document.createElement('tr');
-        tr.setAttribute('data-row', String(nextNum));
-        tr.innerHTML = '<td class="row-num">' + nextNum + '</td>' + COLUMNS.map((col) => {
-            const cls = col === 'Year' ? 'mb-input mb-input-year' : (col === 'Soil_Loss_Sqm' ? 'mb-input mb-target' : 'mb-input');
-            const attrs = col === 'Year' ? ' min="1900" max="2100" step="1" placeholder="—"' : ' min="0" step="any" placeholder="0"';
-            const req = col === 'Soil_Loss_Sqm' ? ' required' : '';
-            return '<td><input type="number" name="' + escapeHtml(col) + '" class="' + cls + '" data-col="' + escapeHtml(col) + '"' + attrs + req + '></td>';
-        }).join('');
-        tbody.appendChild(tr);
-        const allRows = tbody.querySelectorAll('tr');
-        allRows.forEach((r, i) => { r.querySelector('.row-num').textContent = i + 1; r.setAttribute('data-row', String(i + 1)); });
-        createMbIcons();
-    });
-
-    document.getElementById('btnRemoveRow')?.addEventListener('click', () => {
-        const tbody = inputTable?.querySelector('tbody');
-        if (!tbody) return;
-        const rows = tbody.querySelectorAll('tr');
-        if (rows.length <= 1) return;
-        rows[rows.length - 1].remove();
-        rows.forEach((r, i) => { r.querySelector('.row-num').textContent = i + 1; r.setAttribute('data-row', String(i + 1)); });
-    });
-
-    const regressionMethodSelect = document.getElementById('regressionMethodSelect');
-    const stepwiseThresholdsWrap = document.getElementById('stepwiseThresholdsWrap');
-    if (regressionMethodSelect && stepwiseThresholdsWrap) {
-        function toggleStepwiseOptions() {
-            stepwiseThresholdsWrap.hidden = regressionMethodSelect.value === 'enter';
-        }
-        regressionMethodSelect.addEventListener('change', toggleStepwiseOptions);
-        toggleStepwiseOptions();
-    }
-
-    function updateStepwiseTag() {
-        if (getRegressionMethod() !== 'stepwise') return;
-        const tag = document.getElementById('stepwiseThresholdTag');
-        if (!tag) return;
-        const ep = getEntryP();
-        const rp = getRemovalP();
-        const isSpss = Math.abs(ep - 0.05) < 1e-6 && Math.abs(rp - 0.10) < 1e-6;
-        tag.textContent = isSpss ? 'SPSS default (0.05 / 0.10)' : 'Custom (' + ep + ' / ' + rp + ')';
-        tag.classList.toggle('mb-tag-spss', isSpss);
-        tag.classList.toggle('mb-tag-custom', !isSpss);
-    }
-    document.getElementById('entryPInput')?.addEventListener('input', updateStepwiseTag);
-    document.getElementById('entryPInput')?.addEventListener('change', updateStepwiseTag);
-    document.getElementById('removalPInput')?.addEventListener('input', updateStepwiseTag);
-    document.getElementById('removalPInput')?.addEventListener('change', updateStepwiseTag);
-
     const validationToggle = document.getElementById('validationToggle');
     const validationPanel = document.getElementById('validationPanel');
     if (validationToggle && validationPanel) {
@@ -1075,19 +1067,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function buildSaveEquationFormula(reg) {
         const equationStr = reg.equation || (buildDynamicEquation(reg, getPThreshold()) || '');
         const lines = [equationStr, ''];
-        lines.push('--- Model Summary ---');
-        lines.push('Dependent variable: Soil_Loss_Sqm');
         lines.push('Final predictors: ' + (Array.isArray(reg.selected_predictors) ? reg.selected_predictors.join(', ') : Object.keys(reg.coefficients || {}).join(', ')));
-        lines.push('R² = ' + (reg.r_squared != null ? reg.r_squared : '—'));
-        lines.push('Adjusted R² = ' + (reg.adjusted_r_squared != null ? reg.adjusted_r_squared : '—'));
-        lines.push('Standard Error of Estimate = ' + (reg.standard_error_of_estimate != null ? reg.standard_error_of_estimate : '—'));
-        const settings = reg.validation?.stepwise_settings;
-        const method = reg.stepwise_mode ? 'Stepwise' : 'Enter';
-        lines.push('Regression method: ' + method);
-        if (settings) {
-            lines.push('Stepwise thresholds: Entry p ≤ ' + settings.entry_p + ', Removal p ≥ ' + settings.removal_p);
-        }
-        lines.push('Generated: ' + new Date().toISOString());
         return lines.join('\n');
     }
 
@@ -1421,10 +1401,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btnRunNew?.addEventListener('click', runNewCalculation);
 
-    // Load default dataset when user opens the Model Builder page.
-    applyExampleToTable(DEFAULT_INPUT_DATA);
-
-    // Do not show results until user clicks "Run Regression".
+    // Table starts empty; user enters data manually or clicks "Load Example".
     lastRegression = null;
     lastAux = null;
     setLoading(false);

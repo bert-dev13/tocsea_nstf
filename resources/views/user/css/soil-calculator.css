@@ -467,6 +467,175 @@
     background: rgba(34, 197, 94, 0.1);
 }
 
+/* 4b. Calculation Details Section */
+.soil-result-details-section {
+    background: var(--color-off-white);
+    border-radius: 12px;
+    padding: 1.25rem;
+    border: 1px solid var(--color-gray-200);
+    margin-bottom: 1rem;
+}
+
+.soil-result-details-section[hidden] {
+    display: none !important;
+}
+
+.soil-result-details-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+@media (min-width: 640px) {
+    .soil-result-details-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.soil-result-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.soil-result-detail-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.soil-result-detail-value {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-gray-900);
+    word-break: break-word;
+}
+
+.soil-result-detail-block {
+    margin-top: 0.75rem;
+}
+
+.soil-result-formula {
+    margin: 0.5rem 0 0;
+    padding: 0.75rem 1rem;
+    background: var(--color-white);
+    border: 1px solid var(--color-gray-200);
+    border-radius: 10px;
+    overflow-x: auto;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    color: var(--color-gray-900);
+    white-space: pre-wrap;
+}
+
+.soil-result-inputs {
+    list-style: none;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+}
+
+@media (min-width: 640px) {
+    .soil-result-inputs {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.soil-result-inputs li {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--color-white);
+    border: 1px solid var(--color-gray-200);
+    border-radius: 10px;
+    font-size: 0.8125rem;
+}
+
+.soil-result-inputs .soil-input-name {
+    color: var(--color-gray-700);
+    font-weight: 600;
+    min-width: 0;
+}
+
+.soil-result-inputs .soil-input-value {
+    color: var(--color-gray-900);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.soil-save-status {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
+
+.soil-save-status.soil-save-status--success {
+    color: #15803d;
+}
+
+.soil-save-status.soil-save-status--error {
+    color: #b91c1c;
+}
+
+/* Toast notifications */
+.soil-toast-wrap {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    z-index: 9999;
+    pointer-events: none;
+}
+
+.soil-toast {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-width: 260px;
+    max-width: min(420px, calc(100vw - 32px));
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    border: 1px solid var(--color-gray-200);
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--color-gray-900);
+    box-shadow: 0 10px 30px rgba(10, 37, 64, 0.18);
+    opacity: 0;
+    transform: translateY(-6px);
+    transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.soil-toast--visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.soil-toast--success .lucide-icon {
+    color: #15803d;
+}
+
+.soil-toast--error .lucide-icon {
+    color: #b91c1c;
+}
+
+.soil-toast-text {
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .soil-toast {
+        transition: none;
+    }
+}
+
 /* 5. Action Buttons Row */
 .soil-result-actions {
     display: flex;
@@ -498,6 +667,17 @@
     background: linear-gradient(135deg, var(--color-teal), var(--color-ocean-blue));
     color: var(--color-white);
     border: none;
+}
+
+.soil-action-btn:disabled,
+.soil-action-btn[disabled] {
+    opacity: 0.75;
+    cursor: not-allowed;
+}
+
+.soil-action-btn:disabled:hover,
+.soil-action-btn[disabled]:hover {
+    transform: none;
 }
 
 .soil-action-secondary {

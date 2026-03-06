@@ -271,6 +271,22 @@
     accent-color: var(--color-teal);
 }
 
+/* Regression method note (fixed defaults) */
+.mb-regression-note {
+    margin: 0;
+    padding: var(--space-md) var(--space-lg);
+    font-size: 0.875rem;
+    color: var(--color-gray-700);
+    background: var(--color-off-white);
+    border: 1px solid var(--color-gray-200);
+    border-radius: 10px;
+    line-height: 1.5;
+}
+
+#regressionNoteSection {
+    margin-bottom: var(--space-xl);
+}
+
 /* Run area */
 .mb-run-area {
     display: flex;
@@ -284,6 +300,8 @@
 .mb-action-bar {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
     gap: var(--space-md);
     padding: var(--space-lg) 0;
 }
@@ -371,6 +389,13 @@
 .mb-table-scroll {
     overflow-x: auto;
     margin-top: var(--space-sm);
+}
+
+.mb-table-hint {
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+    margin: 0 0 var(--space-md);
+    line-height: 1.5;
 }
 
 .mb-table-scroll-wrap {
