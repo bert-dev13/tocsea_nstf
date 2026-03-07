@@ -652,8 +652,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (treeRecGroundCoverSection) treeRecGroundCoverSection.setAttribute('hidden', '');
             if (treeRecCoastalTreesSection) treeRecCoastalTreesSection.setAttribute('hidden', '');
             if (treeRecSpeciesSection) treeRecSpeciesSection.removeAttribute('hidden');
-            treeRecSpeciesList.innerHTML = rec.species.map((s) => `<li><strong>${escapeHtml(s.name)}</strong><span class="soil-tree-reason">${escapeHtml(s.reason)}</span></li>`).join('');
-            treeRecStrategyList.innerHTML = rec.strategy.map((s) => `<li>${escapeHtml(s)}</li>`).join('');
+            treeRecSpeciesList.innerHTML = rec.species.map((s) => renderSpeciesItem({ name: s.name, reason: s.reason, recommended_planting: 'Not available' })).join('');
+            treeRecStrategyList.innerHTML = rec.strategy.map((s) => '<li>' + escapeHtml(s) + '</li>').join('');
         } finally {
             if (treeRecLoading) treeRecLoading.setAttribute('hidden', '');
             if (treeRecContent) treeRecContent.removeAttribute('hidden');
@@ -770,6 +770,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function renderSpeciesItem(s) {
+        const name = escapeHtml(s.name || '');
+        const purpose = escapeHtml((s.reason || s.purpose || '').trim());
+        let quantity = (s.recommended_planting || '').trim();
+        if (!quantity && s.recommended_number != null && s.recommended_number !== '') {
+            const num = typeof s.recommended_number === 'number' ? String(s.recommended_number) : String(s.recommended_number).trim();
+            const unit = (s.unit || '').trim();
+            quantity = unit ? num + ' ' + unit : num;
+        }
+        if (!quantity) quantity = (s.recommended_number || '').trim();
+        const quantityDisplay = quantity ? escapeHtml(quantity) : 'Not available';
+        return '<li class="soil-tree-species-card">' +
+            '<div class="soil-tree-species-card-inner">' +
+            '<div class="soil-tree-species-left">' +
+            '<div class="soil-tree-species-name">' + name + '</div>' +
+            '<div class="soil-tree-species-purpose"><span class="soil-tree-species-label">Purpose:</span> ' + (purpose || '—') + '</div>' +
+            '</div>' +
+            '<div class="soil-tree-species-right">' +
+            '<div class="soil-tree-species-quantity"><span class="soil-tree-species-label">Recommended Number:</span> ' + quantityDisplay + '</div>' +
+            '</div>' +
+            '</div>' +
+            '</li>';
+    }
+
     function renderTreeRecFromData(data, soilType, riskLevel) {
         const groundCover = data.ground_cover || [];
         const coastalTrees = data.coastal_trees || [];
@@ -785,10 +809,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (treeRecGroundCoverSection && treeRecGroundCoverList) {
                 if (groundCover.length > 0) {
                     treeRecGroundCoverSection.removeAttribute('hidden');
-                    treeRecGroundCoverList.innerHTML = groundCover.map((s) => {
-                        const reason = s.reason || '';
-                        return `<li><strong>${escapeHtml(s.name)}</strong><span class="soil-tree-reason">${escapeHtml(reason)}</span></li>`;
-                    }).join('');
+                    treeRecGroundCoverList.innerHTML = groundCover.map((s) => renderSpeciesItem(s)).join('');
                 } else {
                     treeRecGroundCoverSection.setAttribute('hidden', '');
                     treeRecGroundCoverList.innerHTML = '';
@@ -797,10 +818,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (treeRecCoastalTreesSection && treeRecCoastalTreesList) {
                 if (coastalTrees.length > 0) {
                     treeRecCoastalTreesSection.removeAttribute('hidden');
-                    treeRecCoastalTreesList.innerHTML = coastalTrees.map((s) => {
-                        const reason = s.reason || '';
-                        return `<li><strong>${escapeHtml(s.name)}</strong><span class="soil-tree-reason">${escapeHtml(reason)}</span></li>`;
-                    }).join('');
+                    treeRecCoastalTreesList.innerHTML = coastalTrees.map((s) => renderSpeciesItem(s)).join('');
                 } else {
                     treeRecCoastalTreesSection.setAttribute('hidden', '');
                     treeRecCoastalTreesList.innerHTML = '';
@@ -808,23 +826,25 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (treeRecSpeciesSection) treeRecSpeciesSection.setAttribute('hidden', '');
             const strategyLines = [
-                strategyObj.shoreline ? `Shoreline — ${strategyObj.shoreline}` : null,
-                strategyObj.mid_slope ? `Mid-Slope — ${strategyObj.mid_slope}` : null,
-                strategyObj.inland ? `Inland — ${strategyObj.inland}` : null,
+                strategyObj.shoreline ? 'Shoreline — ' + strategyObj.shoreline : null,
+                strategyObj.mid_slope ? 'Mid-Slope — ' + strategyObj.mid_slope : null,
+                strategyObj.inland ? 'Inland — ' + strategyObj.inland : null,
             ].filter(Boolean);
             treeRecStrategyList.innerHTML = strategyLines.length > 0
-                ? strategyLines.map((s) => `<li>${escapeHtml(s)}</li>`).join('')
-                : rec.strategy.map((s) => `<li>${escapeHtml(s)}</li>`).join('');
+                ? strategyLines.map((s) => '<li>' + escapeHtml(s) + '</li>').join('')
+                : rec.strategy.map((s) => '<li>' + escapeHtml(s) + '</li>').join('');
         } else {
             if (treeRecGroundCoverSection) treeRecGroundCoverSection.setAttribute('hidden', '');
             if (treeRecCoastalTreesSection) treeRecCoastalTreesSection.setAttribute('hidden', '');
             if (treeRecSpeciesSection) treeRecSpeciesSection.removeAttribute('hidden');
-            treeRecSpeciesList.innerHTML = species.length
-                ? species.map((s) => `<li><strong>${escapeHtml(s.name)}</strong><span class="soil-tree-reason">${escapeHtml(s.reason)}</span></li>`).join('')
-                : rec.species.map((s) => `<li><strong>${escapeHtml(s.name)}</strong><span class="soil-tree-reason">${escapeHtml(s.reason)}</span></li>`).join('');
+            if (species.length) {
+                treeRecSpeciesList.innerHTML = species.map((s) => renderSpeciesItem(s)).join('');
+            } else {
+                treeRecSpeciesList.innerHTML = rec.species.map((s) => renderSpeciesItem({ name: s.name, reason: s.reason, recommended_planting: 'Not available' })).join('');
+            }
             treeRecStrategyList.innerHTML = strategyArray.length
-                ? strategyArray.map((s) => `<li>${escapeHtml(s)}</li>`).join('')
-                : rec.strategy.map((s) => `<li>${escapeHtml(s)}</li>`).join('');
+                ? strategyArray.map((s) => '<li>' + escapeHtml(s) + '</li>').join('')
+                : rec.strategy.map((s) => '<li>' + escapeHtml(s) + '</li>').join('');
         }
     }
 

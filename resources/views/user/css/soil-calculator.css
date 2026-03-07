@@ -1066,12 +1066,8 @@
     padding: 0;
 }
 
-/* Species items: compact card rows with green check bullet */
+/* Species items: compact card rows with green check bullet (legacy single-line items) */
 .soil-tree-species-list li {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 0.5rem 0.75rem;
     padding: 0.75rem 0;
     font-size: 0.9375rem;
     line-height: 1.55;
@@ -1082,7 +1078,77 @@
     border-bottom: none;
 }
 
-.soil-tree-species-list li::before {
+/* New card format: two-column — left: Species + Purpose; right: Recommended Number */
+.soil-tree-species-list li.soil-tree-species-card {
+    display: block;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--color-gray-200);
+    border-radius: 10px;
+    background: var(--color-white);
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid var(--color-gray-200);
+}
+
+.soil-tree-species-list li.soil-tree-species-card:last-child {
+    margin-bottom: 0;
+}
+
+.soil-tree-species-card-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.soil-tree-species-left {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.soil-tree-species-right {
+    flex: 0 0 auto;
+    text-align: right;
+}
+
+.soil-tree-species-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-gray-900);
+    margin-bottom: 0.5rem;
+}
+
+.soil-tree-species-purpose,
+.soil-tree-species-quantity {
+    font-size: 0.875rem;
+    color: var(--color-gray-700);
+    line-height: 1.5;
+    margin-top: 0.35rem;
+}
+
+.soil-tree-species-label {
+    font-weight: 600;
+    color: var(--color-gray-800);
+}
+
+.soil-tree-species-quantity {
+    font-weight: 600;
+    color: var(--color-teal);
+}
+
+.soil-tree-species-right .soil-tree-species-quantity {
+    margin-top: 0;
+}
+
+/* Legacy list item layout (when not using .soil-tree-species-card) */
+.soil-tree-species-list li:not(.soil-tree-species-card) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.5rem 0.75rem;
+}
+
+.soil-tree-species-list li:not(.soil-tree-species-card)::before {
     content: '✓';
     flex-shrink: 0;
     display: flex;
@@ -1097,7 +1163,7 @@
     font-weight: 700;
 }
 
-.soil-tree-species-list li strong {
+.soil-tree-species-list li:not(.soil-tree-species-card) strong {
     flex: 1 1 calc(100% - 2rem);
     font-size: 1rem;
     font-weight: 700;

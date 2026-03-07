@@ -18,7 +18,7 @@
                         Model Builder
                     </h1>
                     <p class="header-location mb-page-desc">
-                        Build multiple linear regression models from coastal data. OLS-based engine aligned with SPSS for Stepwise and Enter methods.
+                        Build multiple linear regression models from coastal data.
                     </p>
                 </div>
             </div>
@@ -94,7 +94,7 @@
 
     {{-- Regression method note (fixed defaults) --}}
     <section class="dashboard-section model-builder-section fade-in-element mb-section" id="regressionNoteSection">
-        <p class="mb-regression-note" aria-live="polite">Using SPSS default Stepwise Regression (Enter ≤ 0.05, Remove ≥ 0.10) with Soil_Loss_Sqm as the dependent variable.</p>
+        <p class="mb-regression-note" aria-live="polite">Using default thresholds (Enter ≤ 0.05, Remove ≥ 0.10) with Soil_Loss_Sqm as the dependent variable.</p>
     </section>
 
     {{-- Run Regression action area --}}
@@ -120,7 +120,7 @@
         <div id="resultsContent" class="mb-results-content" hidden>
             <article class="mb-card mb-result-card" id="generatedModelCard">
                 <h3 class="mb-result-heading">Generated Regression Model</h3>
-                <p class="mb-stepwise-note" id="stepwiseNote">Final equation includes only predictors retained by the full stepwise procedure.</p>
+                <p class="mb-stepwise-note" id="stepwiseNote">Final equation includes only predictors retained by the procedure.</p>
 
                 <div id="generatedModelContent">
                     <div class="mb-equation-header">
@@ -170,7 +170,7 @@
                     </button>
                 </h4>
                 <div id="validationPanel" class="mb-validation-panel" hidden aria-hidden="true">
-                    <p class="mb-hint">Compare line-by-line with SPSS. Shown when URL contains <code>?validation=1</code>. Full precision and matrices for debugging.</p>
+                    <p class="mb-hint">Compare line-by-line. Shown when URL contains <code>?validation=1</code>. Full precision and matrices for debugging.</p>
                     <div id="validationContent" class="mb-validation-content"></div>
                 </div>
             </article>

@@ -146,17 +146,23 @@ document.addEventListener('DOMContentLoaded', () => {
         return decimals == null ? v : Math.round(v * Math.pow(10, decimals)) / Math.pow(10, decimals);
     }
 
-    /** Generate a new random example dataset with realistic coastal variable ranges. Ensures variation for regression. */
-    function generateRandomExampleData(rowCount) {
+    /**
+     * Generate a new random example dataset each time, designed so that stepwise regression
+     * (Enter ≤ 0.05, Remove ≥ 0.10) yields two or more statistically significant predictors.
+     * Soil_Loss_Sqm is computed from: intercept + β1*Precipitation_mm + β2*Storm_Surges + noise,
+     * so both predictors stay significant while all other columns and the exact values change on every load.
+     */
+    function generateExampleDataWithSignificantPredictors(rowCount) {
         const baseYear = new Date().getFullYear();
+        const intercept = 12000 + randFloat(0, 6000, 0);
+        const coefPrecip = 25 + randFloat(0, 10, 2);
+        const coefStorm = 8000 + randFloat(0, 4000, 0);
         const rows = [];
-        const usedSoilLoss = new Set();
         for (let i = 0; i < rowCount; i++) {
-            let soilLoss = randFloat(40000, 120000, 2);
-            while (usedSoilLoss.has(soilLoss)) {
-                soilLoss = randFloat(40000, 120000, 2);
-            }
-            usedSoilLoss.add(soilLoss);
+            const precipitationMm = randInt(1550, 2550);
+            const stormSurges = randInt(0, 3);
+            const noise = randFloat(-600, 600, 2);
+            const soilLossSqm = Math.round((intercept + coefPrecip * precipitationMm + coefStorm * stormSurges + noise) * 100) / 100;
             rows.push({
                 Year: baseYear - i,
                 Trop_Depressions: randInt(0, 5),
@@ -165,18 +171,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 Typhoons: randInt(0, 3),
                 Super_Typhoons: randInt(0, 2),
                 Floods: randInt(0, 4),
-                Storm_Surges: randInt(0, 3),
-                Precipitation_mm: randInt(1500, 2600),
+                Storm_Surges: stormSurges,
+                Precipitation_mm: precipitationMm,
                 Seawall_m: randInt(0, 1600),
                 Veg_Area_Sqm: randInt(1700000, 2400000),
                 Coastal_Elevation: randFloat(1.9, 2.2, 2),
-                Soil_Loss_Sqm: soilLoss,
+                Soil_Loss_Sqm: Math.max(10000, soilLossSqm),
             });
         }
         return rows;
     }
 
-    /** Default dataset (2009–2018) used only as fallback when no random data; Load Example uses generateRandomExampleData. */
+    /** Default dataset (2009–2018) used only as fallback when no example data; Load Example uses generateExampleDataWithSignificantPredictors. */
     const DEFAULT_INPUT_DATA = [
         { Year: 2018, Trop_Depressions: 4, Trop_Storms: 3, Sev_Trop_Storms: 1, Typhoons: 1, Super_Typhoons: 0, Floods: 2, Storm_Surges: 0, Precipitation_mm: 2365, Seawall_m: 1537, Veg_Area_Sqm: 1828043, Coastal_Elevation: 2.06, Soil_Loss_Sqm: 80045.17 },
         { Year: 2017, Trop_Depressions: 1, Trop_Storms: 2, Sev_Trop_Storms: 2, Typhoons: 2, Super_Typhoons: 0, Floods: 3, Storm_Surges: 1, Precipitation_mm: 2286, Seawall_m: 1471, Veg_Area_Sqm: 1863028, Coastal_Elevation: 1.93, Soil_Loss_Sqm: 87493.48 },
@@ -392,7 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return n.toLocaleString('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
     }
 
-    /** P-value threshold for coefficient significance (SPSS default 0.05). */
+    /** P-value threshold for coefficient significance (default 0.05). */
     function getPThreshold() {
         return 0.05;
     }
@@ -590,7 +596,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 sections.push('<h5>Simple regressions (first step)</h5><table class="mb-data-table"><thead><tr><th>Predictor</th><th>R²</th><th>Intercept</th><th>Coefficient</th><th>t</th><th>p-value</th></tr></thead><tbody>' + rows + '</tbody></table>');
             }
             if (reg.step_log && reg.step_log.length) {
-                sections.push('<h5>Stepwise step log (entry/removal decisions)</h5><pre>' + escapeHtml(JSON.stringify(reg.step_log, null, 2)) + '</pre>');
+                sections.push('<h5>Step log (entry/removal decisions)</h5><pre>' + escapeHtml(JSON.stringify(reg.step_log, null, 2)) + '</pre>');
             }
             validationContent.innerHTML = sections.join('');
         }
@@ -916,17 +922,17 @@ document.addEventListener('DOMContentLoaded', () => {
         createMbIcons();
     }
 
-    /** Load example data into the table (only when user clicks Load Example). New random dataset each time. */
+    /** Load example data into the table (only when user clicks Load Example). Each click generates a new random dataset designed to yield two or more statistically significant predictors when Run Regression is used. */
     function loadExample() {
         setTableRowCountExactly(EXAMPLE_ROW_COUNT);
-        const exampleData = generateRandomExampleData(EXAMPLE_ROW_COUNT);
+        const exampleData = generateExampleDataWithSignificantPredictors(EXAMPLE_ROW_COUNT);
         applyExampleToTable(exampleData);
         lastRegression = null;
         lastAux = null;
         resultsEmpty.hidden = false;
         resultsContent.hidden = true;
         hideError();
-        showToast('New example dataset loaded.');
+        showToast('New example dataset loaded. Run Regression to see significant predictors.');
     }
 
     /** Clear the table so the user can enter new data. */

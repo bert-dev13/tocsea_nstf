@@ -57,11 +57,10 @@ class SoilCalculatorController extends Controller
             $recommendations = $this->aiService->generateTreeRecommendations($context);
 
             return response()->json($recommendations);
-        } catch (\RuntimeException $e) {
-            return response()->json([
-                'error' => $e->getMessage(),
-                'fallback' => true,
-            ], 500);
+        } catch (\Throwable $e) {
+            $fallback = $this->aiService->buildFallbackTreeRecommendations($context);
+
+            return response()->json($fallback);
         }
     }
 }
