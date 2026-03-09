@@ -80,10 +80,18 @@ function getInitials(name) {
     return trimmed.charAt(0).toUpperCase();
 }
 
+/** Exact section headings for Ask TOCSEA (order preserved for detection) */
+const ASK_SECTION_HEADINGS = [
+    'Quick Interpretation',
+    'Key Contributing Factors',
+    'Recommended Interventions',
+    'Risk Reduction Strategy',
+    'Report-Ready Summary Paragraph',
+];
+
 /**
  * Convert AI response text to styled HTML (sections, bullets, bold).
- * Strips "Response as TOCSEA", converts markdown, XSS-safe.
- * Section titles (Quick Interpretation, Key Contributing Factors, etc.) become bold headers.
+ * Strips reasoning steps, markdown ##, and formats the 5 decision-support sections. XSS-safe.
  * @param {string} text
  * @returns {string}
  */
@@ -91,15 +99,19 @@ function textToHtml(text) {
     if (!text || typeof text !== 'string') return '';
     let s = text.trim();
 
-    // Remove "Response as TOCSEA" and similar headers (case-insensitive)
+    // Remove "Response as TOCSEA" and similar preambles
     s = s.replace(/^\s*(?:\*\*)?\s*Response\s+as\s+TOCSEA\s*(?:\*\*)?\s*:?\s*\n?/i, '');
+    // Remove any remaining "Step 1:", "Step 2:" lines (defense in depth)
+    s = s.replace(/^\s*Step\s*\d+\s*:?\s*[^\n]*\n?/gim, '');
+    s = s.replace(/\n\s*Step\s*\d+\s*:?\s*[^\n]*/gim, '');
 
     s = escapeHtml(s);
 
+    // Strip markdown headings (## or ###) so they don't break layout
+    s = s.replace(/^#{1,6}\s*/gm, '');
     // Convert **bold** to <strong>
     s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
 
-    // Process block by block for valid HTML structure
     const blocks = s.split(/\n\n+/);
     const parts = [];
 
@@ -109,27 +121,36 @@ function textToHtml(text) {
 
         const lines = trimmed.split(/\n/);
 
-        // Single line matching "1. Title" or "2. Title"
-        if (lines.length === 1 && /^\d+\.\s+.+/.test(trimmed)) {
-            const title = trimmed.replace(/^\d+\.\s+/, '');
-            parts.push(`<div class="ask-response-section-title">${title}</div>`);
+        // Single line: check if it's one of the 5 official section headings (with or without trailing colon)
+        const singleLine = lines.length === 1 ? trimmed.replace(/:?\s*$/, '').trim() : '';
+        const isOfficialSection = ASK_SECTION_HEADINGS.some(
+            (h) => singleLine.toLowerCase() === h.toLowerCase()
+        );
+        if (isOfficialSection) {
+            parts.push(`<div class="ask-response-section-title">${singleLine}</div>`);
             continue;
         }
 
-        // Single line that looks like a section title (ends with colon, or common report headers)
-        const isSectionTitle = lines.length === 1 && (
+        // Single line matching "1. Title" (numbered section) — treat as section title, strip number
+        if (lines.length === 1 && /^\d+\.\s+.+/.test(trimmed)) {
+            const title = trimmed.replace(/^\d+\.\s+/, '').replace(/:?\s*$/, '').trim();
+            if (title) parts.push(`<div class="ask-response-section-title">${title}</div>`);
+            continue;
+        }
+
+        // Single line that looks like a generic section title
+        if (lines.length === 1 && (
             /:\s*$/.test(trimmed) ||
-            /^(Quick Interpretation|Key Contributing Factors|Recommended Actions|Summary|Conclusion|Risk Assessment|Notes|Additional Context|Interpretation|Factors|Recommendations|Key Findings|Next Steps)\s*$/i.test(trimmed)
-        );
-        if (isSectionTitle) {
+            /^(Quick Interpretation|Key Contributing Factors|Recommended Interventions|Risk Reduction Strategy|Report-Ready Summary|Summary|Conclusion|Risk Assessment|Interpretation|Factors|Recommendations|Key Findings)\s*$/i.test(trimmed)
+        )) {
             const title = trimmed.replace(/:?\s*$/, '').trim();
             if (title) parts.push(`<div class="ask-response-section-title">${title}</div>`);
             continue;
         }
 
         // All lines are bullets (- * •)
-        const bulletMatch = lines.every((l) => /^\s*[-*•]\s+/.test(l));
-        if (bulletMatch && lines.length > 0) {
+        const bulletMatch = lines.length > 0 && lines.every((l) => /^\s*[-*•]\s+/.test(l));
+        if (bulletMatch) {
             const items = lines
                 .map((l) => l.replace(/^\s*[-*•]\s+/, ''))
                 .map((c) => `<li>${c}</li>`)

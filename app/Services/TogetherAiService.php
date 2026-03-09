@@ -18,28 +18,36 @@ class TogetherAiService
     protected float $temperature;
 
     public const SYSTEM_PROMPT = <<<'PROMPT'
-You are TOCSEA (Total Coastal Soil Erosion Assistant), an AI-powered Environmental Decision Support Assistant.
+You are TOCSEA, an intelligent environmental analysis assistant designed to interpret coastal hazard and soil erosion results.
 
-Your role:
-Help users interpret soil loss predictions, coastal hazard exposure, regression model outputs, and environmental risk data in a professional, structured, and decision-support format.
+Your role is to explain environmental risk results in a clear, professional, and analytical way suitable for students, researchers, planners, and local government decision makers.
 
-IMPORTANT RULES:
-1. If environmental context (calculation inputs, model equation, predicted soil loss result, hazard values, soil type, vegetation area, seawall length, precipitation) is provided — you MUST use it in your explanation.
-2. Never invent numerical values that are not included in the provided context.
-3. If important data is missing, ask a short clarifying question before giving conclusions.
-4. Keep explanations clear and understandable for LGUs, planners, and environmental officers.
-5. Provide practical and actionable interventions.
-6. Do NOT claim legal authority or official DENR approval.
-7. Maintain a professional government-report tone.
+OUTPUT RULES — CRITICAL:
+- Do NOT use fixed report templates (Quick Interpretation, Key Contributing Factors, Recommended Interventions, Risk Reduction Strategy, Report-Ready Summary Paragraph).
+- Do NOT show reasoning steps (Step 1, Step 2, Step 3) or chain-of-thought. Output only your final explanation.
+- Provide a natural explanation similar to how an environmental scientist would explain the results.
 
-RESPONSE FORMAT (Always Follow This Structure):
-1. Quick Interpretation (2–4 sentences)
-2. Key Contributing Factors (bullets)
-3. Recommended Interventions (bullets with short explanation)
-4. Risk Reduction Strategy (what changes in inputs would lower predicted soil loss)
-5. Report-Ready Summary Paragraph (formal tone suitable for documentation)
+STRUCTURE (logical flow, not rigid headings):
+- Start by explaining the overall risk level.
+- Describe the environmental conditions contributing to the result.
+- Explain how these factors influence soil erosion or land stability.
+- Provide realistic mitigation or management recommendations.
+- End with a short concluding insight about the environmental implications.
 
-Keep the answer structured, professional, and concise but informative.
+RESPONSE GUIDELINES:
+- Clear, professional, concise, and informative.
+- Avoid repeating the same format in every answer. Each response should feel naturally written.
+- Use short paragraphs for readability.
+- If numerical values are present (precipitation, storm surges, soil loss), briefly explain their environmental impact.
+- Ensure the response is understandable for both technical and non-technical users.
+- Sound like an environmental expert interpreting coastal risk data rather than a rigid AI-generated report.
+
+CONTENT RULES:
+- If environmental context (calculation inputs, model equation, predicted soil loss, hazard values, soil type, vegetation, seawall, precipitation) is provided — use it in your explanation.
+- Never invent numerical values not in the provided context.
+- If important data is missing, ask one short clarifying question, then stop.
+- Do NOT claim legal authority or official DENR approval.
+- Do not use markdown headings (no ## or ###).
 PROMPT;
 
     public const TREE_RECOMMENDATION_SYSTEM_PROMPT = <<<'PROMPT'
@@ -105,6 +113,7 @@ PROMPT;
             throw new \RuntimeException('AI service is not configured. Please contact support.');
         }
 
+        $messages = $this->normalizeMessagesForApi($messages);
         $payload = [
             'model' => $this->model,
             'messages' => $messages,
@@ -114,6 +123,13 @@ PROMPT;
 
         $url = $this->baseUrl . '/chat/completions';
 
+        if (config('app.debug')) {
+            Log::debug('TOCSEA Ask: Together AI request', [
+                'model' => $this->model,
+                'message_count' => count($messages),
+            ]);
+        }
+
         try {
             $response = Http::withToken($apiKey)
                 ->timeout($this->timeout)
@@ -122,30 +138,87 @@ PROMPT;
             if ($response->failed()) {
                 $status = $response->status();
                 $body = $response->json();
+                $apiMessage = $body['error']['message'] ?? $body['message'] ?? $response->body();
                 Log::error('TOCSEA Ask: Together AI request failed', [
                     'status' => $status,
-                    'error' => $body['error']['message'] ?? $response->body(),
+                    'error' => $apiMessage,
                 ]);
-                throw new \RuntimeException(
-                    'Unable to get AI response. Please try again later.'
-                );
+                $userMessage = is_string($apiMessage) && strlen($apiMessage) < 200
+                    ? $apiMessage
+                    : 'Unable to get AI response. Please try again later.';
+                throw new \RuntimeException($userMessage);
             }
 
             $data = $response->json();
             $choice = $data['choices'][0] ?? null;
 
             if (! $choice || ! isset($choice['message']['content'])) {
-                Log::error('TOCSEA Ask: Unexpected API response structure', ['keys' => array_keys($data ?? [])]);
+                Log::error('TOCSEA Ask: Unexpected API response structure', [
+                    'keys' => array_keys($data ?? []),
+                    'raw_preview' => is_string($response->body()) ? substr($response->body(), 0, 500) : null,
+                ]);
                 throw new \RuntimeException('Invalid AI response. Please try again.');
             }
 
-            return trim($choice['message']['content']);
+            $raw = trim($choice['message']['content']);
+            return $this->cleanAskTocseaResponse($raw);
+        } catch (\RuntimeException $e) {
+            throw $e;
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            Log::error('TOCSEA Ask: Connection failed (timeout or unreachable)', [
+                'message' => $e->getMessage(),
+            ]);
+            throw new \RuntimeException('Request to AI service timed out or could not connect. Please try again.');
         } catch (\Throwable $e) {
             Log::error('TOCSEA Ask: Request failed', [
                 'message' => $e->getMessage(),
+                'exception' => get_class($e),
             ]);
-            throw new \RuntimeException('Request to AI service timed out or failed. Please try again.');
+            throw new \RuntimeException('Request to AI service failed. Please try again.');
         }
+    }
+
+    /**
+     * Remove internal reasoning steps (Step 1, Step 2, chain-of-thought) from Ask TOCSEA response.
+     * Keeps only the final structured answer (Quick Interpretation, Key Contributing Factors, etc.).
+     */
+    protected function cleanAskTocseaResponse(string $content): string
+    {
+        if ($content === '') {
+            return $content;
+        }
+
+        $lines = preg_split('/\r\n|\r|\n/', $content);
+        $out = [];
+
+        foreach ($lines as $line) {
+            $trimmed = trim($line);
+            if ($trimmed === '') {
+                $out[] = '';
+                continue;
+            }
+
+            $lower = strtolower($trimmed);
+
+            // Remove internal reasoning: "Step 1:", "Step 2:", etc.
+            if (preg_match('/^\s*Step\s*\d+\s*:?\s*/i', $trimmed)) {
+                continue;
+            }
+            // Remove numbered reasoning like "1. Understand the relationship..."
+            if (preg_match('/^\d+\.\s*(?:Understand|Identify|Analyze|Consider|Summarize|Evaluate)\s/i', $trimmed)) {
+                continue;
+            }
+            // Remove chain-of-thought preamble lines
+            if (preg_match('/^(?:First\s+I\s+will|Let\s+me\s+(?:analyze|consider|explain)|To\s+answer\s+this|I\'ll\s+start\s+by|In\s+order\s+to)\s/i', $lower)) {
+                continue;
+            }
+
+            $out[] = $line;
+        }
+
+        $joined = implode("\n", $out);
+        $joined = preg_replace('/\n{3,}/', "\n\n", $joined);
+        return trim($joined);
     }
 
     /**
@@ -173,6 +246,30 @@ PROMPT;
         $messages[] = ['role' => 'user', 'content' => $userContent];
 
         return $messages;
+    }
+
+    /**
+     * Ensure all message contents are strings for the Together API (avoids input validation errors).
+     *
+     * @param  array<int, array{role: string, content: mixed}>  $messages
+     * @return array<int, array{role: string, content: string}>
+     */
+    protected function normalizeMessagesForApi(array $messages): array
+    {
+        $out = [];
+        foreach ($messages as $i => $msg) {
+            $role = isset($msg['role']) && is_string($msg['role']) ? $msg['role'] : 'user';
+            $content = $msg['content'] ?? '';
+            if (is_array($content)) {
+                $content = json_encode($content);
+            }
+            $content = trim((string) $content);
+            if ($content === '' && $role === 'system') {
+                continue;
+            }
+            $out[] = ['role' => $role, 'content' => $content];
+        }
+        return $out;
     }
 
     /**

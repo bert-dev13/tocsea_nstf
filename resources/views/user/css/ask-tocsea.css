@@ -337,18 +337,20 @@
     padding-left: 1.25em;
 }
 
-/* AI response body - professional report styling */
+/* AI response body - professional report styling (decision-support format) */
 .ask-response-body {
     line-height: 1.7;
+    color: var(--color-gray-900);
 }
 
 .ask-response-section-title {
     font-size: 1.0625rem;
     font-weight: 700;
     color: var(--color-gray-900);
-    margin: 1.5em 0 0.5em;
-    padding-bottom: 0.5em;
+    margin: 1.25em 0 0.5em;
+    padding-bottom: 0.4em;
     border-bottom: 1px solid var(--color-gray-200);
+    letter-spacing: 0.01em;
 }
 
 .ask-response-section-title:first-child {
@@ -368,9 +370,13 @@
 }
 
 .ask-response-list {
-    margin: 0.75em 0 1.25em;
+    margin: 0.5em 0 1em;
     padding-left: 1.5em;
     list-style: disc;
+}
+
+.ask-response-section-title + .ask-response-list {
+    margin-top: 0.35em;
 }
 
 .ask-response-list li {

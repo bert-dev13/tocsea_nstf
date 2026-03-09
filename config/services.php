@@ -42,8 +42,8 @@ return [
     'together' => [
         'api_key' => env('TOGETHER_API_KEY'),
         'base_url' => env('TOGETHER_API_BASE_URL', 'https://api.together.xyz/v1'),
-        'model' => env('TOGETHER_MODEL', 'meta-llama/Llama-Guard-4-12B'),
-        'timeout' => (int) env('TOGETHER_TIMEOUT', 60),
+        'model' => env('TOGETHER_MODEL', 'meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8'),
+        'timeout' => (int) env('TOGETHER_TIMEOUT', 90),
         'max_tokens' => (int) env('TOGETHER_MAX_TOKENS', 800),
         'temperature' => (float) env('TOGETHER_TEMPERATURE', 0.3),
     ],
