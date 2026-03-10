@@ -45,7 +45,7 @@
 }
 
 /* --------------------------------------------------------------------------
-   Nav adjustments for authenticated user - dropdown menu
+   Nav adjustments for authenticated user - dropdown menu & responsive layout
    -------------------------------------------------------------------------- */
 .top-nav-form {
     display: block;
@@ -113,6 +113,141 @@
 
 .top-nav-tool.is-active .lucide-icon {
     color: var(--color-teal-light);
+}
+
+/* Hamburger toggle - hidden on desktop, visible on small screens */
+.top-nav-menu-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    margin-left: auto;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    background: rgba(0, 0, 0, 0.08);
+    color: var(--color-white);
+    cursor: pointer;
+    padding: 0;
+}
+
+.top-nav-menu-toggle:focus-visible {
+    outline: 2px solid var(--color-teal-light);
+    outline-offset: 2px;
+}
+
+.top-nav-menu-icon,
+.top-nav-menu-icon::before,
+.top-nav-menu-icon::after {
+    display: block;
+    width: 18px;
+    height: 2px;
+    border-radius: 999px;
+    background-color: currentColor;
+    position: relative;
+    transition: transform var(--transition-fast), opacity var(--transition-fast), background-color var(--transition-fast);
+}
+
+.top-nav-menu-icon::before,
+.top-nav-menu-icon::after {
+    content: '';
+    position: absolute;
+    left: 0;
+}
+
+.top-nav-menu-icon::before {
+    top: -6px;
+}
+
+.top-nav-menu-icon::after {
+    top: 6px;
+}
+
+.top-nav-menu-toggle[aria-expanded="true"] .top-nav-menu-icon {
+    background-color: transparent;
+}
+
+.top-nav-menu-toggle[aria-expanded="true"] .top-nav-menu-icon::before {
+    transform: translateY(6px) rotate(45deg);
+}
+
+.top-nav-menu-toggle[aria-expanded="true"] .top-nav-menu-icon::after {
+    transform: translateY(-6px) rotate(-45deg);
+}
+
+/* Mobile dropdown container */
+.top-nav-mobile-menu {
+    display: none;
+    position: relative;
+    background: linear-gradient(135deg, var(--color-ocean-blue), var(--color-deep-blue));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 10px 30px rgba(10, 37, 64, 0.25);
+    z-index: 20;
+}
+
+.top-nav-mobile-menu.is-open {
+    display: block;
+}
+
+.top-nav-mobile-nav {
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-xs) var(--space-lg) var(--space-md);
+    gap: 2px;
+}
+
+.top-nav-mobile-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 12px 0;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    text-decoration: none;
+    text-align: left;
+    cursor: pointer;
+}
+
+.top-nav-mobile-link + .top-nav-mobile-link {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.top-nav-mobile-link-logout {
+    color: var(--color-teal-light);
+}
+
+.top-nav-mobile-link.is-active {
+    color: var(--color-white);
+    font-weight: 600;
+}
+
+@media (hover: hover) {
+    .top-nav-mobile-link:hover {
+        color: var(--color-white);
+    }
+}
+
+/* Mobile layout: hide desktop nav, show hamburger */
+@media (max-width: 767.98px) {
+    .top-nav-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-md);
+    }
+
+    .top-nav-tools,
+    .top-nav-actions {
+        display: none;
+    }
+
+    .top-nav-menu-toggle {
+        display: inline-flex;
+    }
 }
 
 .top-nav-user-menu {
@@ -242,19 +377,6 @@
 
 /* Mobile: compact tools (icons only), icon-only user trigger */
 @media (max-width: 640px) {
-    .top-nav-tools {
-        gap: var(--space-xs);
-        margin: 0 var(--space-sm);
-    }
-
-    .top-nav-tool {
-        padding: 6px 10px;
-    }
-
-    .top-nav-tool-label {
-        display: none;
-    }
-
     .top-nav-user-trigger {
         padding: 8px;
     }

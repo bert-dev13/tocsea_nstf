@@ -177,6 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
     createIcons({ icons: DASHBOARD_ICONS, attrs: { 'stroke-width': 2 } });
     initScrollAnimations();
     initUserMenu();
+    initMobileNav();
     loadWeather();
     initQuickActions();
 });
@@ -234,6 +235,67 @@ function initUserMenu() {
             trigger.setAttribute('aria-expanded', 'false');
         }
     });
+}
+
+function initMobileNav() {
+    const toggle = document.querySelector('.top-nav-menu-toggle');
+    const mobileMenu = document.getElementById('top-nav-mobile-menu');
+    if (!toggle || !mobileMenu) return;
+
+    const closeMenu = () => {
+        mobileMenu.classList.remove('is-open');
+        mobileMenu.setAttribute('aria-hidden', 'true');
+        toggle.setAttribute('aria-expanded', 'false');
+        document.body.classList.remove('top-nav-mobile-open');
+    };
+
+    const openMenu = () => {
+        mobileMenu.classList.add('is-open');
+        mobileMenu.setAttribute('aria-hidden', 'false');
+        toggle.setAttribute('aria-expanded', 'true');
+        document.body.classList.add('top-nav-mobile-open');
+    };
+
+    toggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = mobileMenu.classList.contains('is-open');
+        if (isOpen) {
+            closeMenu();
+        } else {
+            openMenu();
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!mobileMenu.classList.contains('is-open')) return;
+        const target = e.target;
+        if (target.closest('.top-nav-mobile-menu') || target.closest('.top-nav-menu-toggle')) return;
+        closeMenu();
+    });
+
+    window.addEventListener('resize', () => {
+        if (window.innerWidth >= 768 && mobileMenu.classList.contains('is-open')) {
+            closeMenu();
+        }
+    });
+
+    mobileMenu.querySelectorAll('a.top-nav-mobile-link').forEach((link) => {
+        link.addEventListener('click', () => {
+            closeMenu();
+        });
+    });
+
+    const mobileLogoutBtn = mobileMenu.querySelector('[data-mobile-logout="true"]');
+    if (mobileLogoutBtn) {
+        mobileLogoutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            closeMenu();
+            const logoutForm = document.getElementById('logout-form');
+            if (logoutForm) {
+                logoutForm.submit();
+            }
+        });
+    }
 }
 
 function initScrollAnimations() {

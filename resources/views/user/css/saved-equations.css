@@ -391,6 +391,7 @@
 .mb-saved-table .mb-saved-name-cell {
     font-weight: 500;
     color: var(--color-gray-900);
+    word-break: break-word;
 }
 
 .mb-saved-table .mb-saved-formula-cell {
@@ -618,6 +619,18 @@
 }
 
 @media (max-width: 768px) {
+    .mb-se-card-body {
+        padding: var(--space-lg);
+    }
+
+    .mb-se-card-body-compact {
+        padding: var(--space-md) var(--space-lg);
+    }
+
+    .mb-se-section {
+        margin-top: var(--space-lg);
+    }
+
     .mb-se-section-header {
         flex-direction: column;
         align-items: stretch;
@@ -694,6 +707,82 @@
 
     .mb-saved-actions-dropdown {
         display: block;
+    }
+}
+
+@media (max-width: 480px) {
+    .mb-se-page-wrap.dashboard-hub {
+        padding-left: var(--space-md);
+        padding-right: var(--space-md);
+    }
+
+    .dashboard-header {
+        margin-bottom: var(--space-xl);
+    }
+
+    .header-card.mb-header-inner {
+        gap: var(--space-md);
+    }
+
+    .ch-header-title {
+        font-size: 1.125rem;
+    }
+
+    .ch-header-subtitle {
+        font-size: 0.8125rem;
+    }
+
+    .mb-se-card-body {
+        padding: var(--space-md);
+    }
+
+    .mb-se-card-body-compact {
+        padding: var(--space-md);
+    }
+
+    .ch-filters-card {
+        margin-bottom: var(--space-md);
+    }
+
+    .mb-saved-table-styled tbody tr {
+        padding: var(--space-md);
+        border-radius: 10px;
+    }
+
+    .mb-saved-table-styled .mb-saved-name-cell {
+        margin-bottom: 0.35rem;
+    }
+
+    .mb-saved-table-styled .mb-saved-formula-cell {
+        font-size: 0.8rem;
+    }
+
+    .mb-saved-table-styled .mb-saved-actions-cell {
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+    }
+
+    .mb-saved-actions-inner {
+        gap: 0.4rem;
+    }
+
+    .mb-saved-action-btn {
+        padding: 0.45rem 0.75rem;
+        min-height: 2.5rem;
+    }
+
+    .mb-saved-actions-dropdown-menu .mb-saved-action-btn {
+        padding: 0.5rem 0.85rem;
+    }
+
+    .mb-saved-table .mb-saved-formula-cell,
+    .mb-saved-table .mb-saved-name-cell {
+        max-width: none;
+        word-break: break-word;
+    }
+
+    .mb-saved-pagination {
+        margin-top: var(--space-sm);
     }
 }
 

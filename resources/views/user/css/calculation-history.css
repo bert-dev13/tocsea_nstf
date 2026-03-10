@@ -587,6 +587,121 @@
 }
 
 /* --------------------------------------------------------------------------
+   Responsive layout refinements for Calculation History (table, filters, actions)
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 768px) {
+    /* Prevent horizontal scrolling on the page container */
+    #calculationHistoryPage {
+        width: 100%;
+        overflow-x: hidden;
+    }
+
+    /* Ensure the history table behaves like stacked cards without forcing min-width */
+    .mb-saved-table-container.ch-table-wrap {
+        overflow-x: visible;
+    }
+
+    .ch-table {
+        width: 100%;
+        min-width: 0;
+        table-layout: fixed;
+    }
+
+    /* Allow date and result text to wrap on smaller screens */
+    .ch-td-date,
+    .ch-td-result {
+        white-space: normal;
+    }
+
+    /* Force actions to remain visible on mobile for Calculation History
+       (override Saved Equations mobile dropdown behavior) */
+    #calculationHistoryPage .mb-saved-actions-inner {
+        display: inline-flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    #calculationHistoryPage .mb-saved-actions-dropdown {
+        display: none;
+    }
+
+    /* Make action buttons easier to tap when wrapped */
+    #calculationHistoryPage .mb-saved-actions-cell .mb-saved-action-btn {
+        min-height: 2.5rem;
+    }
+}
+
+@media (max-width: 640px) {
+    /* Filters: stack and fill width on small screens */
+    .ch-filters {
+        row-gap: var(--space-sm);
+    }
+
+    .ch-search-wrap,
+    .ch-filter-row {
+        width: 100%;
+    }
+
+    .ch-filter-row .ch-input,
+    .ch-select {
+        width: 100%;
+    }
+
+    .ch-filter-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Tighter spacing for very small devices */
+    .ch-header-content {
+        gap: 0.35rem;
+    }
+
+    .ch-header-title {
+        font-size: 1.1rem;
+    }
+
+    .ch-header-subtitle {
+        font-size: 0.8rem;
+    }
+
+    /* Make filter controls comfortable to tap */
+    .ch-filters-card {
+        margin-bottom: var(--space-md);
+    }
+
+    .ch-input {
+        padding: 0.55rem 0.75rem;
+        font-size: 0.875rem;
+    }
+
+    /* Stack row actions vertically and make them full-width for thumb reach */
+    #calculationHistoryPage .mb-saved-actions-inner {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #calculationHistoryPage .mb-saved-actions-cell .mb-saved-action-btn,
+    #calculationHistoryPage .mb-saved-actions-cell .ch-btn-view,
+    #calculationHistoryPage .mb-saved-actions-cell .ch-btn-delete {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Ensure long equation names or text never break the layout */
+    .mb-saved-name-cell,
+    .ch-td-inputs,
+    .ch-td-result {
+        word-break: break-word;
+        overflow-wrap: anywhere;
+    }
+}
+
+/* --------------------------------------------------------------------------
    Responsive: same breakpoint as Saved Equation (768px)
    -------------------------------------------------------------------------- */
 @media (max-width: 768px) {
@@ -602,8 +717,10 @@
 
     /* data-label for mobile card layout (same as mb-saved-table-styled block layout) */
     .mb-saved-table-styled .ch-td-date,
+    .mb-saved-table-styled .mb-saved-name-cell,
     .mb-saved-table-styled .ch-td-inputs,
-    .mb-saved-table-styled .ch-td-result {
+    .mb-saved-table-styled .ch-td-result,
+    .mb-saved-table-styled .mb-saved-actions-cell {
         display: block;
         padding: 0.25rem 0;
         border: none;
@@ -613,8 +730,10 @@
     }
 
     .mb-saved-table-styled .ch-td-date::before,
+    .mb-saved-table-styled .mb-saved-name-cell::before,
     .mb-saved-table-styled .ch-td-inputs::before,
-    .mb-saved-table-styled .ch-td-result::before {
+    .mb-saved-table-styled .ch-td-result::before,
+    .mb-saved-table-styled .mb-saved-actions-cell::before {
         content: attr(data-label);
         font-weight: 500;
         color: var(--color-gray-600);

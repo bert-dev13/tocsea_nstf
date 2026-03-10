@@ -296,6 +296,8 @@
     border-radius: 14px;
     font-size: 0.9375rem;
     line-height: 1.7;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
 }
 
 .ask-message-user .ask-message-bubble {
@@ -341,6 +343,8 @@
 .ask-response-body {
     line-height: 1.7;
     color: var(--color-gray-900);
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
 }
 
 .ask-response-section-title {
@@ -582,6 +586,7 @@
     cursor: pointer;
     border: none;
     transition: background-color var(--transition-fast), color var(--transition-fast);
+    min-height: 44px;
 }
 
 .ask-btn-primary {
@@ -619,4 +624,120 @@
 
 .ask-btn-sm {
     font-size: 0.8125rem;
+}
+
+/* Ensure any rich content (tables, images, code blocks) stays within chat width */
+.ask-response-body table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.75em 0;
+    display: block;
+    overflow-x: auto;
+}
+
+.ask-response-body th,
+.ask-response-body td {
+    padding: 0.4em 0.6em;
+    border: 1px solid var(--color-gray-200);
+    text-align: left;
+    font-size: 0.875rem;
+}
+
+.ask-response-body img,
+.ask-response-body iframe {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+.ask-response-body pre,
+.ask-response-body code {
+    max-width: 100%;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* Mobile-first refinements for Ask TOCSEA */
+@media (max-width: 640px) {
+    .ask-tocsea-page {
+        padding: 0 var(--space-md);
+    }
+
+    .ask-header-inner {
+        padding: var(--space-lg) var(--space-lg);
+    }
+
+    .ask-header-title {
+        font-size: 1.25rem;
+        gap: var(--space-sm);
+    }
+
+    .ask-header-subtitle {
+        font-size: 0.875rem;
+    }
+
+    .ask-section {
+        margin-top: var(--space-lg);
+    }
+
+    .ask-chat-panel {
+        min-height: 0;
+    }
+
+    .ask-messages {
+        padding: var(--space-md);
+        max-height: none;
+    }
+
+    .ask-input-wrap {
+        padding: var(--space-sm) var(--space-md) var(--space-md);
+    }
+
+    .ask-input {
+        font-size: 0.9rem;
+        min-height: 64px;
+    }
+
+    .ask-input-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+        gap: var(--space-sm);
+    }
+
+    .ask-btn {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .ask-btn-ghost {
+        justify-content: flex-start;
+        width: auto;
+    }
+
+    .ask-btn-primary {
+        padding-top: var(--space-md);
+        padding-bottom: var(--space-md);
+    }
+
+    .ask-suggested-questions {
+        margin-bottom: var(--space-sm);
+    }
+
+    .ask-suggested-chip {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .ask-message-inner {
+        max-width: 100%;
+    }
+
+    .ask-message-bubble {
+        padding: var(--space-md);
+        font-size: 0.9rem;
+    }
+
+    .ask-response-section-title {
+        font-size: 0.9375rem;
+    }
 }

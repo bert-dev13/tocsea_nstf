@@ -55,8 +55,15 @@
     color: var(--color-gray-900);
 }
 
+/* Primary settings icon colors */
 .settings-label .lucide-icon {
     color: var(--color-ocean-blue);
+}
+
+/* Header settings icon in the top gradient card should be white */
+.settings-page .header-title .lucide-icon {
+    color: #ffffff;
+    stroke: #ffffff;
 }
 
 .settings-required {
