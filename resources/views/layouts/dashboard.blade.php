@@ -78,7 +78,7 @@
                 <a href="{{ route('dashboard') }}" class="top-nav-mobile-link {{ request()->routeIs('dashboard') ? 'is-active' : '' }}">Dashboard</a>
                 <a href="{{ route('soil-calculator') }}" class="top-nav-mobile-link {{ request()->routeIs('soil-calculator') ? 'is-active' : '' }}">Soil Calculator</a>
                 <a href="{{ route('model-builder') }}" class="top-nav-mobile-link {{ request()->routeIs('model-builder') || request()->routeIs('model-builder.saved-equations') ? 'is-active' : '' }}">Model Builder</a>
-                <a href="{{ route('calculation-history.index') }}" class="top-nav-mobile-link {{ request()->routeIs('calculation-history.*') ? 'is-active' : '' }}">Summary / Reports</a>
+                <a href="{{ route('calculation-history.index') }}" class="top-nav-mobile-link {{ request()->routeIs('calculation-history.*') ? 'is-active' : '' }}">Calculation History</a>
                 <a href="{{ route('ask-tocsea') }}" class="top-nav-mobile-link {{ request()->routeIs('ask-tocsea') ? 'is-active' : '' }}">Ask TOCSEA</a>
                 <a href="{{ route('settings.index') }}" class="top-nav-mobile-link {{ request()->routeIs('settings.*') ? 'is-active' : '' }}">Settings</a>
                 <button type="button" class="top-nav-mobile-link top-nav-mobile-link-logout" data-mobile-logout="true">
