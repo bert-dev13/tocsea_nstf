@@ -202,6 +202,34 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastRegression = null;
     let lastAux = null;
 
+    /**
+     * Apply responsive data-label attributes to each table cell so that
+     * small-screen layouts can show the column header as a label above inputs.
+     * Works with the mobile CSS that uses td[data-label]::before.
+     */
+    function applyResponsiveTableLabels(tableEl) {
+        if (!tableEl) return;
+        const headerCells = Array.from(tableEl.querySelectorAll('thead th'));
+        if (!headerCells.length) return;
+
+        const labels = headerCells.map((th, index) => {
+            // First column is the row number; keep label empty so CSS can treat it specially.
+            if (index === 0) return '';
+            const dataCol = th.getAttribute('data-col');
+            const text = (th.textContent || '').replace('*', '').trim();
+            return dataCol || text;
+        });
+
+        const bodyRows = tableEl.querySelectorAll('tbody tr');
+        bodyRows.forEach((tr) => {
+            const cells = Array.from(tr.children);
+            cells.forEach((cell, cellIndex) => {
+                if (cellIndex >= labels.length) return;
+                cell.setAttribute('data-label', labels[cellIndex]);
+            });
+        });
+    }
+
     function collectRows() {
         const rows = [];
         const trs = inputTable.querySelectorAll('tbody tr');
@@ -881,6 +909,8 @@ document.addEventListener('DOMContentLoaded', () => {
             tbody.appendChild(tr);
             need--;
         }
+        // Ensure any newly added rows also receive responsive labels.
+        applyResponsiveTableLabels(inputTable);
     }
 
     /** Renumber the # column and data-row for all rows in the table (1-based). */
@@ -1411,6 +1441,7 @@ document.addEventListener('DOMContentLoaded', () => {
     lastRegression = null;
     lastAux = null;
     setLoading(false);
+    applyResponsiveTableLabels(inputTable);
 
     ['samplePredictionSeawall', 'samplePredictionPrecip', 'samplePredictionTropicalStorm', 'samplePredictionFlood'].forEach((id) => {
         document.getElementById(id)?.addEventListener('input', updateSamplePredictionResult);
